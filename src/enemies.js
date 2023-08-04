@@ -155,6 +155,7 @@ class Bullet {
         this.scale = v(20, 20)
         this.vel = vel
         this.speed = 10
+        this.lifespan = 10000
         this.force = force
         this.remove = () => {
             for(let o in objects) {
@@ -166,6 +167,8 @@ class Bullet {
         this.update = (e)=>{
             this.pos.x += this.vel.x*this.speed
             this.pos.y += this.vel.y*this.speed
+            this.lifespan += -(tick-lastTick)
+            if(this.lifespan<0) this.remove()
             
             for(let obj of objects) {
                 if(overlapping(obj.pos.x, obj.pos.y, obj.scale.x, obj.scale.y, this.pos.x, this.pos.y, this.scale.x, this.scale.y)&&!(obj instanceof Bullet)&&!(obj instanceof this.force.constructor)) {
