@@ -1,7 +1,9 @@
 class Hitbox {
-    constructor(pos, scale){
+    constructor(pos, scale, colour, update){
         this.pos = pos
         this.scale = scale
+        this.colour = colour || "#fff"
+        this.update = update
     }
     remove() {
         for(let o in objects) {
@@ -9,6 +11,10 @@ class Hitbox {
                 objects.splice(o, 1)
             }
         }
+    }
+    render() {
+        ctx.fillStyle = this.colour
+        ctx.fillRect(this.pos.x, this.pos.y, this.scale.x, this.scale.y)
     }
 }
 
@@ -33,6 +39,11 @@ class World {
         this.objects = objs || []
     }
     loadWorld() {
+        /*
+        objects = []
+        for(let obj of this.objects) {
+            objects.push(obj)
+        }*/
         objects = this.objects
     }
 }
@@ -219,27 +230,70 @@ let tutorial = new World([
     new Hitbox(v(2800, -100), v(50, 700)),
     new Hitbox(v(2400, -600), v(50, 1000)),
     new Hitbox(v(2400, -600), v(800, 50)),
-    new Hitbox(v(3200, -600), v(50, 1000)),
+    new Hitbox(v(3200, -1400), v(50, 1800)),
+    new Hitbox(v(3200, -1400), v(3200, 50)),
     new Trigger(v(2400, 400), v(50, 200), ()=>{
         tooltip = "[SPACE] against walls to wall jump."
     }),
-    new Trigger(v(500, 500), v(50, 200), ()=>{
+    new Trigger(v(500, 500), v(50, 100), ()=>{
         tooltip = "Press [SHIFT] to dash."
     }),
     new Trigger(v(3200, 400), v(50, 200), ()=>{
         tooltip = "[LMB] to shoot."
-        for(let i=0; i<3; i++) {
+        for(let i=0; i<2; i++) {
             objects.push(new Drone(v(3400+i*200, -400)))
             objects[objects.length-1].required = true
         }
-        objects.push(new Hitbox(v(6400, -400), v(50, 500)))
+        objects.push(new Hitbox(v(6400, -1400), v(50, 1500)))
         objects[objects.length-1].update = (th) => {
             let u = false
             for(let obj of objects) {
                 if(obj.required) u = true
             }
-            if(u)th.remove()
+            if(!u)th.remove()
         }
     }),
-    new Hitbox(v(6400, 100), v(1000, 50)),
+    new Hitbox(v(6400, 100), v(1650, 50)),
+    new Trigger(v(6400, -1400), v(50, 1500), ()=>{
+        tooltip = "Press [F] to punch."
+        objects.push(new Virtue(v(6800, -400)))
+        objects[objects.length-1].required = true
+        objects.push(new Virtue(v(7600, -400)))
+        objects[objects.length-1].required = true
+        objects.push(new Hitbox(v(6400, -1400), v(1600, 50)))
+        objects[objects.length-1].update = (th) => {
+            let u = false
+            for(let obj of objects) {
+                if(obj.required) u = true
+            }
+            if(!u)th.remove()
+        }
+    }),
+    new Hitbox(v(8000, -2400), v(50, 2500)),
+    new Hitbox(v(3200, -2400), v(4800, 50)),
+    new Trigger(v(6400, -2400), v(50, 1000), ()=>{
+        tooltip = "Press [R] to whiplash enemies."
+        for(let i=0; i<5; i++) {
+            objects.push(new Drone(v(3400, -2200+i*200)))
+            objects[objects.length-1].required = true
+        }
+        objects.push(new Hitbox(v(3200, -2400), v(50, 1000)))
+        objects[objects.length-1].update = (th) => {
+            let u = false
+            for(let obj of objects) {
+                if(obj.required) u = true
+            }
+            if(!u)th.remove()
+        }
+    }),
+    new Trigger(v(3200, -2400), v(50, 1000), ()=>{
+        tooltip = ""
+        for(let i=0; i<10; i++) {
+            objects.push(new Drone(v(2400, -2200+i*200)))
+            objects[objects.length-1].required = true
+        } for(let i=0; i<2; i++) {
+            objects.push(new Virtue(v(1400, -2200+i*1000)))
+            objects[objects.length-1].required = true
+        }
+    })
 ])

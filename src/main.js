@@ -82,7 +82,8 @@ var objects = [
         )
     }),
 ]
-tutorial.loadWorld()
+var loadedWorld = tutorial
+loadedWorld.loadWorld()
 var debugAnglePoints = []
 var recentShot = [v(0, 0), v(50, 50)]
 var recentShots = []
@@ -123,14 +124,14 @@ function render() {
     
     for(obj of objects) {
         ctx.fillStyle = "#ffffff"
-        if(obj instanceof Trigger) {
+        if(obj instanceof Trigger) { /*
             ctx.strokeStyle = "#ff00ff"
             ctx.beginPath();
             ctx.lineWidth = 4
             ctx.rect(obj.pos.x, obj.pos.y, obj.scale.x, obj.scale.y)
             ctx.stroke();
             ctx.strokeStyle = "#ffffff"
-            ctx.lineWidth = 1
+            ctx.lineWidth = 1*/
         } else {
             if(obj instanceof Enemy) {ctx.fillStyle = "#ff0000"}
             if(obj instanceof Bullet) {obj.force instanceof Enemy? ctx.fillStyle = "#f20" : ctx.fillStyle = "#0af"}
@@ -201,7 +202,9 @@ function render() {
     ctx.fillStyle = "#f70"
     ctx.fillRect(window.innerWidth/2-50-player.scale.x/2, window.innerHeight-100, 1.5*player.fuel, 25)
     ctx.font = "25px Arial"
-    ctx.fillText(Math.floor(player.style), window.innerWidth/2+150-player.scale.x/2, window.innerHeight-100)
+    ctx.textAlign = "center";
+    ctx.fillText(Math.floor(player.style), window.innerWidth/2, window.innerHeight-10)
+    ctx.textAlign = "left";
     ctx.font = "10px Arial"
     
     function getMid(obj) {return v(obj.pos.x + obj.scale.x, obj.pos.y + obj.scale.y)}
@@ -381,7 +384,9 @@ window.addEventListener('mousedown', (e) => {
     //fetchAngle(player.middle, hoverVector)
     //console.log(hover)
     if(!player.alive) {
+        loadedWorld.loadWorld()
         player = new Player()
+        
     }
 })
 window.addEventListener('mouseup', (e) => {

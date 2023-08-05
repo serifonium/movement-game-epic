@@ -318,6 +318,7 @@ class Husk extends Enemy {
 }
 
 class Virtue extends Enemy {
+    beamActive = false
     constructor(pos) {
         super(pos, v(75, 75))
         this.health = 50
@@ -343,7 +344,7 @@ class Virtue extends Enemy {
             ctx.beginPath()
             ctx.arc(this.middle.x, this.middle.y, this.scale.x/2, 0, Math.PI*2)
             ctx.fill()
-            ctx.fillStyle="#fff"
+            ctx.fillStyle="#f33"
             if(this.beam.state == "charging")ctx.fillRect(this.beam.pos.x-this.beam.size/2,this.beam.pos.y+50, this.beam.size, 20)
             if(this.beam.state == "launch") {
                 let a = 20
@@ -361,10 +362,10 @@ class Virtue extends Enemy {
                 }
                 else ctx.globalAlpha = 1
                 ctx.globalAlpha *= 0.5
-                ctx.fillRect(this.beam.pos.x-this.beam.size/2,-1000, this.beam.size, 3000)
+                ctx.fillRect(this.beam.pos.x-this.beam.size/2,-100000, this.beam.size, 200000)
                 ctx.globalAlpha *= 2
-                ctx.fillRect(this.beam.pos.x-this.beam.size/4,-1000, this.beam.size/2, 3000)
-            }
+                ctx.fillRect(this.beam.pos.x-this.beam.size/4,-100000, this.beam.size/2, 200000)
+            }/*
             ctx.fillStyle="#f30"
             ctx.beginPath()
             ctx.arc(this.sourcePoint.x, this.sourcePoint.y, 4, 0, Math.PI*2)
@@ -372,25 +373,27 @@ class Virtue extends Enemy {
             ctx.strokeStyle="#f30"
             ctx.beginPath()
             ctx.arc(this.sourcePoint.x, this.sourcePoint.y, this.wanderLimit, 0, Math.PI*2)
-            ctx.stroke()
+            ctx.stroke()*/
         } 
         this.update = (e) => {
             this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
             this.vel = v(0, 0)
             if(this.beam.state=="charging") {this.beam.pos = player.middle}
-            this.beam.tick += (tick-lastTick)+Math.random()*1-0.5
+            if(!Virtue.beamActive || this.beam.state == "launch") this.beam.tick += (tick-lastTick)+Math.random()
             if(this.beam.tick > this.beam.cooldownTick) {
                 this.beam.tick += -this.beam.cooldownTick
                 this.beam.hitPlayer = false
             }
             if(this.beam.tick < this.beam.chargingTick) this.beam.state = "charging"
-            else if(this.beam.tick < this.beam.launchTick) this.beam.state = "launch"
+            else if(this.beam.tick < this.beam.launchTick) {this.beam.state = "launch"; Virtue.beamActive = true}
             else if(this.beam.tick < this.beam.fireTick) {
                 if(!this.beam.hitPlayer&&overlap(player, {pos:v(this.beam.pos.x,-100000),scale:v(this.beam.size,200000)})) {
                     player.damage(50)
                     this.beam.hitPlayer = true
+                    
                 }
                 this.beam.state = "firing"
+                Virtue.beamActive = false
                 
             }
             else if(this.beam.tick < this.beam.cooldownTick) this.beam.state = "cooldown"
