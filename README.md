@@ -1,5 +1,7 @@
 # movment-game-epic
 
+https://serifonium.github.io/movment-game-epic/
+
 ## controls:
 
 A & D - left & right
