@@ -10,3 +10,4 @@ class SpreadSheet {
     }
 }
 let shotStyles = new SpreadSheet("./imgs/shotStyles.png", v(8, 8), 64)
+let styleStyles = new SpreadSheet("./imgs/style.png", v(4, 4), 128)

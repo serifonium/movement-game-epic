@@ -100,6 +100,51 @@ class Trigger {
     }
 }
 
+class GrindHandler {
+    constructor(){
+        this.wave = 0
+        this.pos = v(10000000, 1000000)
+        this.scale = v(0, 0)
+    }
+    add_enemies() {
+        var bounds = v(2000, 1000)
+        var offset = v(0, -500)
+        function generatePos() {
+            return v(bounds.x*(Math.random()-0.5)+offset.x, bounds.y*(Math.random()-0.5)+offset.y)
+        }
+        var chances = {
+            "Drone":0.8,
+            "Virtue":0.2
+        }
+        for(let i=0; i<=this.wave;i++) {
+            let enemyType = Math.random()
+            if(enemyType < chances["Drone"]) objects.push(new Drone(generatePos()))
+            else objects.push(new Virtue(generatePos()))
+        }
+    }
+    update() {
+        let ENEMY_EXISTS = false
+        objects.forEach((obj)=>{if(obj instanceof Enemy)ENEMY_EXISTS=true}) 
+        if(ENEMY_EXISTS) {
+            
+        } else {
+            this.add_enemies()
+            player.health = 100
+            player.fuel = 50
+            this.wave++
+        }
+        if(player.pos.y > 1000) {
+            player.damage(1.5)
+        }
+    }
+    render() {
+        ctx.fillStyle = "#f90"
+        ctx.font = "300px Arial"
+        ctx.fillText(this.wave, 0, 0)
+        ctx.font = "10px Arial"
+    }
+}
+
 class World {
     constructor(objs){
         this.objects = objs || []
@@ -116,6 +161,45 @@ class World {
 class ParticleCloud {
     constructor(pos, radius, particle, frequency) {
 
+    }
+}
+
+class CombatText extends NoCollisionHitbox {
+    constructor(pos, value) {
+        super(pos, v(1, 1))
+        this.value = value
+        this.vel = v(0, -4)
+        this.life = 2000
+    }
+    render() {
+        ctx.fillStyle = "#f90"
+        ctx.font = "30px Arial"
+        ctx.fillText(this.value, this.pos.x, this.pos.y)
+        ctx.font = "10px Arial"
+    }
+    update() {
+        this.life += -getDeltaTime()
+        if(this.life < 0) this.remove()
+    }
+}
+
+class StyleText extends NoCollisionHitbox {
+    constructor(pos, value, colour) {
+        super(pos, v(1, 1))
+        this.value = value
+        this.vel = v(0, -1.5)
+        this.colour = colour || "#fff"
+        this.life = 2000
+    }
+    render() {
+        ctx.fillStyle = "#02f"
+        ctx.font = "40px Arial"
+        if(this.value>0)ctx.fillText(this.value, this.pos.x, this.pos.y)
+        ctx.font = "10px Arial"
+    }
+    update() {
+        this.life += -getDeltaTime()
+        if(this.life < 0) this.remove()
     }
 }
 
@@ -145,8 +229,9 @@ class ProjectileBomb extends NoCollisionHitbox {
 
 class Coin extends NoCollisionHitbox {
     constructor(pos, vel) {
-        super(v(pos.x, pos.y), v(50, 50))
+        super(v(pos.x-50, pos.y-50), v(100, 100))
         this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+        this.vel = vel
     }
     update() {
         this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
@@ -159,8 +244,9 @@ class Coin extends NoCollisionHitbox {
     render() {
         ctx.fillStyle = "#bde848"
         ctx.beginPath()
-        ctx.arc(this.pos.x, this.pos.y, 5, 0, Math.PI*2)
+        ctx.arc(this.middle.x, this.middle.y, 5, 0, Math.PI*2)
         ctx.fill()
+        
     }
 }
 
@@ -174,6 +260,7 @@ class Explosion {
         this.lifetimeMax = options.lifetime || 400
         this.lifetime = this.lifetimeMax
         this.force = options.force || 5
+        this.dmg = options.dmg || 0
 
         
     }
@@ -186,6 +273,7 @@ class Explosion {
                     if(obj.middle.x<this.middle.x) {obj.vel.x += -1*Math.cos(angle)*this.force; }
                     else {obj.vel.x += -Math.cos(angle)*this.force; }
                     obj.vel.y += -Math.sin(angle)*this.force
+                    if(obj.damage){obj.damage(this.dmg, 3)}
                 }
             }
         }
@@ -220,8 +308,8 @@ class Explosion {
 
 
 class Player {
-    constructor() {
-        this.pos = v(499, 499)
+    constructor(pos) {
+        this.pos = pos || v(0, 0)
         this.vel = v(0, 0)
         this.scale = v(50, 100)
         this.stam = 3
@@ -260,7 +348,7 @@ class Player {
         this.throwCoin=()=>{
             if(this.coinCooldown.current == this.coinCooldown.max) {
                 const DISTANCE = getDistance(player.middle, hoverVector)
-                objects.push(new ProjectileBomb(v(player.middle.x, player.middle.y), this.getPointingVel(Math.sqrt(DISTANCE))))
+                objects.push(new Coin(v(player.middle.x, player.middle.y), this.getPointingVel(Math.sqrt(DISTANCE))))
                 this.coinCooldown.current = 0
             }
         }
@@ -330,6 +418,7 @@ class Player {
                         if(!whip.target) {
                             if(obj instanceof Enemy) {
                                 whip.target = obj
+                                objects.push(new StyleText(v(10000000, 10000000), "Whiplash", "#f90"))
                             }
                         }
                     }
@@ -381,16 +470,18 @@ class Player {
             //console.log(a*radSym, this.middle, hover)
             this.punchingPos = v(this.middle.x+Math.cos(a)*this.punchOffset,this.middle.y+Math.sin(a)*this.punchOffset)
             for(let obj of objects) {
-                if(getDistance(this.punchingPos, obj.pos)<this.punchDist) {
-                    if(obj instanceof Enemy) {
-                        this.whiplash.target?obj.damage(this.punchDmg*2, 2):obj.damage(this.punchDmg, 2)
-                        let m = Math.PI + fetchAngle(obj.pos,this.middle)
-                        obj.vel = v(Math.cos(m)*this.punchVel, Math.sin(m)*this.punchVel)
-                    }
-                    if(obj instanceof Bullet && obj.force instanceof Enemy) {
-                        let m = Math.PI + fetchAngle(obj.pos,this.middle)
-                        obj.vel = v(Math.cos(m)*this.punchVel/5, Math.sin(m)*this.punchVel/5)
-                        obj.force = player
+                if(obj.middle) {
+                    if(getDistance(this.punchingPos, obj.middle)<this.punchDist) {
+                        if(obj instanceof Enemy) {
+                            this.whiplash.target?obj.damage(this.punchDmg*2, 2, "punch"):obj.damage(this.punchDmg, 2, "punch")
+                            let m = Math.PI + fetchAngle(obj.pos,this.middle)
+                            obj.vel = v(Math.cos(m)*this.punchVel, Math.sin(m)*this.punchVel)
+                        }
+                        if(obj instanceof Bullet && obj.force instanceof Enemy) {
+                            let m = Math.PI + fetchAngle(obj.pos,this.middle)
+                            obj.vel = v(Math.cos(m)*this.punchVel/5, Math.sin(m)*this.punchVel/5)
+                            obj.force = player
+                        }
                     }
                 }
             }
@@ -399,13 +490,18 @@ class Player {
     }
     update() {
         this.middle = v(this.pos.x+this.scale.x/2,this.pos.y+this.scale.y/4)
+        if(player.god) {
+            player.stam = 3
+            player.health = 100
+            player.fuel = Math.max(100, player.fuel)
+        }
         if(this.punchCooldown.cur>=0) {
             this.punchCooldown.cur += -(tick - lastTick)
         } else {
             this.punchCooldown.cur = 0
             this.punchingPos = undefined
         }
-        if(this.health <= 0) {
+        if(this.health <= 0 && !player.god) {
             this.health = 0
             this.alive = false
         } else if(this.health < 100 && this.fuel > 0.2) {
@@ -417,11 +513,7 @@ class Player {
             this.whiplash.active?this.whiplash.disapply():this.whiplash.apply()
         }
         if(this.whiplash.active)this.whiplash.update()
-        if(player.god) {
-            player.stam = 3
-            player.health = 100
-            player.fuel = Math.max(100, player.fuel)
-        }
+        
         for(let key of Object.keys(this.keybinds)) {
             if(keys[key])this.keybinds[key]()
         }
@@ -483,7 +575,7 @@ let tutorial = new World([
     new Hitbox(v(6400, 100), v(1000, 50)),
 ])
 
-let earth1 = new World([
+var earth1 = new World([
     new Hitbox(v(-500, 600), v(1500, 50)),
     new Hitbox(v(2000, 600), v(1000, 50)),
     new Hitbox(v(1000, 600), v(50, 1000)),
@@ -500,6 +592,8 @@ let earth1 = new World([
     new Hitbox(v(2000, 1600), v(2000, 50)),
     new Hitbox(v(0, 1600), v(50, 1000)),
     new Hitbox(v(0, 2600), v(5000, 50)),
+
+    new Hitbox(v(4400, -2000), v(200, 50)),
 
     new Hitbox(v(5000, -4900), v(50, 7500)),
     new Hitbox(v(4000, -3400), v(50, 5000)),
@@ -532,4 +626,11 @@ let earth1 = new World([
     new Trigger(v(-400, -400), v(50, 1000), ()=>{
         for(let i=0;i<15;i++){objects.push(new Drone(v(-3000+i*150, 1800)))}
     }),
+])
+
+var grind = new World([
+    new Hitbox(v(-500, 200), v(1000, 50)),
+    new Hitbox(v(-1500, -200), v(500, 50)),
+    new Hitbox(v(1000, -200), v(500, 50)),
+    new GrindHandler()
 ])

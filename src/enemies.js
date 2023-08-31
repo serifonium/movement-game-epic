@@ -11,11 +11,15 @@ class Enemy {
         this.accelrand = (e) => {
             return Math.random()/e+(e-1)/e
         }
-        this.damage = (a,d=6)=>{
+        this.damage = (a,d=6,method)=>{
             this.health += -a
             player.getStyle(a,d)
             if(player.fuel<100)player.fuel += a/d
             if(this.health<=0)this.remove()
+            objects.push(new CombatText(v(this.middle.x, this.middle.y), a))
+            if(method == "punch") {
+                objects.push(new StyleText(v(this.middle.x, this.middle.y), "Fistful", "#05f"))
+            } else if(method == "recoil") objects.push(new StyleText(v(this.middle.x, this.middle.y), "Recoil", "#f00"))
         }
         this.remove = () => {
             for(let o in objects) {
@@ -174,7 +178,7 @@ class Bullet {
             for(let obj of objects) {
                 if(overlapping(obj.pos.x, obj.pos.y, obj.scale.x, obj.scale.y, this.pos.x, this.pos.y, this.scale.x, this.scale.y)&&!(obj instanceof Bullet)&&!(obj instanceof this.force.constructor)) {
                     if(obj.health) { 
-                        if(this.force.constructor == Player) obj.damage(this.speed, 4)
+                        if(this.force.constructor == Player) obj.damage(this.speed, 4, "recoil")
                         else {obj.health += -this.speed}
                     }
                     this.remove()
@@ -344,7 +348,7 @@ class Virtue extends Enemy {
             ctx.beginPath()
             ctx.arc(this.middle.x, this.middle.y, this.scale.x/2, 0, Math.PI*2)
             ctx.fill()
-            ctx.fillStyle="#fff"
+            ctx.fillStyle="#f61"
             if(this.beam.state == "charging")ctx.fillRect(this.beam.pos.x-this.beam.size/2,this.beam.pos.y+50, this.beam.size, 20)
             if(this.beam.state == "launch") {
                 let a = 20
