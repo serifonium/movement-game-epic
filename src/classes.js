@@ -128,7 +128,7 @@ class ProjectileBomb extends NoCollisionHitbox {
     update() {
         this.vel.y += 0.5
         this.vel.x>0?this.vel.x+=-0.15:this.vel.x+=0.15
-        objects.forEach((obj)=>{if(overlap(obj, this)&&obj instanceof Hitbox){
+        objects.forEach((obj)=>{if(overlap(obj, this)&&(obj instanceof Hitbox || obj instanceof Enemy)){
             this.remove()
             this.exp.middle = this.pos
             objects.push(this.exp)
@@ -164,6 +164,25 @@ class Coin extends NoCollisionHitbox {
     }
 }
 
+class CombatText extends NoCollisionHitbox {
+    constructor(pos, value) {
+        super(v(pos.x, pos.y), v(1, 1))
+        this.value = value
+        this.vel = v(0, -2.5)
+        this.lifetime = 1000
+    } 
+    update() {
+        this.lifetime += -getDeltaTime()
+        if(this.lifetime < 0) this.remove()
+    }
+    render() {
+        ctx.fillStyle = "#f90"
+        ctx.font = "25px Arial";
+        ctx.fillText(this.value, this.pos.x, this.pos.y)
+        ctx.font = "10px Arial";
+    }
+}
+
 class Explosion {
     constructor(pos, radius, options={}) {
         this.pos = v(pos.x-radius, pos.y-radius)
@@ -182,10 +201,13 @@ class Explosion {
             if(obj.vel&&obj.middle) {
                 var DISTANCE = getDistance(obj.middle, this.middle)
                 if(DISTANCE <= this.radius) {
+                    let DISTMULTIPLIER = (this.radius/DISTANCE)
+                    console.log(DISTMULTIPLIER)
                     let angle = fetchAngle(obj.middle, this.middle)
                     if(obj.middle.x<this.middle.x) {obj.vel.x += -1*Math.cos(angle)*this.force; }
                     else {obj.vel.x += -Math.cos(angle)*this.force; }
-                    obj.vel.y += -Math.sin(angle)*this.force
+                    obj.vel.y += -(Math.sin(angle)*this.force+4)
+                    if(obj.damage)obj.damage(30)
                 }
             }
         }
@@ -280,7 +302,8 @@ class Player {
                 }
 
                 const DISTANCE = getDistance(player.middle, hoverVector)
-                objects.push(new ProjectileBomb(v(player.middle.x, player.middle.y), this.getPointingVel(Math.sqrt(DISTANCE)), new Explosion(v(player.middle.x, highestY), 200, {force:50})))
+                objects.push(new ProjectileBomb(v(player.middle.x, player.middle.y), this.getPointingVel(Math.sqrt(DISTANCE)), 
+                new Explosion(v(player.middle.x, highestY), 200, {force:50})))
                 this.hyperCooldown.current = 0
             }
         }
@@ -458,29 +481,72 @@ let tutorial = new World([
     new Hitbox(v(2800, -100), v(50, 700)),
     new Hitbox(v(2400, -600), v(50, 1000)),
     new Hitbox(v(2400, -600), v(800, 50)),
-    new Hitbox(v(3200, -600), v(50, 1000)),
+    new Hitbox(v(3200, -1400), v(50, 1800)),
+    new Hitbox(v(3200, -1400), v(3200, 50)),
     new Trigger(v(2400, 400), v(50, 200), ()=>{
         tooltip = "[SPACE] against walls to wall jump."
     }),
-    new Trigger(v(500, 500), v(50, 200), ()=>{
+    new Trigger(v(500, 500), v(50, 100), ()=>{
         tooltip = "Press [SHIFT] to dash."
     }),
     new Trigger(v(3200, 400), v(50, 200), ()=>{
         tooltip = "[LMB] to shoot."
-        for(let i=0; i<3; i++) {
+        for(let i=0; i<2; i++) {
             objects.push(new Drone(v(3400+i*200, -400)))
             objects[objects.length-1].required = true
         }
-        objects.push(new Hitbox(v(6400, -400), v(50, 500)))
+        objects.push(new Hitbox(v(6400, -1400), v(50, 1500)))
         objects[objects.length-1].update = (th) => {
             let u = false
             for(let obj of objects) {
                 if(obj.required) u = true
             }
-            if(u)th.remove()
+            if(!u)th.remove()
         }
     }),
-    new Hitbox(v(6400, 100), v(1000, 50)),
+    new Hitbox(v(6400, 100), v(1650, 50)),
+    new Trigger(v(6400, -1400), v(50, 1500), ()=>{
+        tooltip = "Press [F] to punch."
+        objects.push(new Virtue(v(6800, -400)))
+        objects[objects.length-1].required = true
+        objects.push(new Virtue(v(7600, -400)))
+        objects[objects.length-1].required = true
+        objects.push(new Hitbox(v(6400, -1400), v(1600, 50)))
+        objects[objects.length-1].update = (th) => {
+            let u = false
+            for(let obj of objects) {
+                if(obj.required) u = true
+            }
+            if(!u)th.remove()
+        }
+    }),
+    new Hitbox(v(8000, -2400), v(50, 2500)),
+    new Hitbox(v(3200, -2400), v(4800, 50)),
+    new Trigger(v(6400, -2400), v(50, 1000), ()=>{
+        tooltip = "Press [R] to whiplash enemies."
+        for(let i=0; i<5; i++) {
+            objects.push(new Drone(v(3400, -2200+i*200)))
+            objects[objects.length-1].required = true
+        }
+        objects.push(new Hitbox(v(3200, -2400), v(50, 1000)))
+        objects[objects.length-1].update = (th) => {
+            let u = false
+            for(let obj of objects) {
+                if(obj.required) u = true
+            }
+            if(!u)th.remove()
+        }
+    }),
+    new Trigger(v(3200, -2400), v(50, 1000), ()=>{
+        tooltip = ""
+        for(let i=0; i<10; i++) {
+            objects.push(new Drone(v(2400, -2200+i*200)))
+            objects[objects.length-1].required = true
+        } for(let i=0; i<2; i++) {
+            objects.push(new Virtue(v(1400, -2200+i*1000)))
+            objects[objects.length-1].required = true
+        }
+    })
 ])
 
 let earth1 = new World([
@@ -500,6 +566,10 @@ let earth1 = new World([
     new Hitbox(v(2000, 1600), v(2000, 50)),
     new Hitbox(v(0, 1600), v(50, 1000)),
     new Hitbox(v(0, 2600), v(5000, 50)),
+
+    new Hitbox(v(4300, -200), v(450, 50)),
+    new Hitbox(v(4050, -1200), v(200, 50)),
+    new Hitbox(v(4800, -1200), v(200, 50)),
 
     new Hitbox(v(5000, -4900), v(50, 7500)),
     new Hitbox(v(4000, -3400), v(50, 5000)),

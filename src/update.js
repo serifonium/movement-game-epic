@@ -203,9 +203,9 @@ function update() {
             slam()
             keys["control"] = false
         }
-        if(keys["+"]) {
+        if(keys["="]) {
             scaleFactor *= 2
-            keys["+"] = false
+            keys["="] = false
         } if(keys["-"]) {
             scaleFactor *= 1/2
             keys["-"] = false

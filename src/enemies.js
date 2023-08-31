@@ -12,6 +12,7 @@ class Enemy {
             return Math.random()/e+(e-1)/e
         }
         this.damage = (a,d=6)=>{
+            objects.push(new CombatText(this.pos, a))
             this.health += -a
             player.getStyle(a,d)
             if(player.fuel<100)player.fuel += a/d
@@ -344,7 +345,7 @@ class Virtue extends Enemy {
             ctx.beginPath()
             ctx.arc(this.middle.x, this.middle.y, this.scale.x/2, 0, Math.PI*2)
             ctx.fill()
-            ctx.fillStyle="#fff"
+            ctx.fillStyle="#f33"
             if(this.beam.state == "charging")ctx.fillRect(this.beam.pos.x-this.beam.size/2,this.beam.pos.y+50, this.beam.size, 20)
             if(this.beam.state == "launch") {
                 let a = 20
