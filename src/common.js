@@ -26,6 +26,59 @@ function v(t, n) {
       r = t.y - n.y;
     return Math.sqrt(Math.pow(e, 2) + Math.pow(r, 2));
   }
+  function intercept(src, dst, v) {
+    const tx = dst.x - src.x;
+    const ty = dst.y - src.y;
+    const tvx = dst.vx;
+    const tvy = dst.vy;
+
+    // Get quadratic equation components
+    const a = tvx * tvx + tvy * tvy - v * v;
+    const b = 2 * (tvx * tx + tvy * ty);
+    const c = tx * tx + ty * ty;
+
+    // Solve quadratic
+    const ts = quad(a, b, c);  // See quad() function below
+
+    // Find smallest positive solution
+    let sol = null;
+    if (ts) {
+        const t0 = ts[0];
+        const t1 = ts[1];
+        const t = Math.min(t0, t1);
+        if (t < 0) {
+            t = Math.max(t0, t1);
+        }
+        if (t > 0) {
+            sol = {
+                x: dst.x + dst.vx * t,
+                y: dst.y + dst.vy * t
+            };
+        }
+    }
+
+    return sol;
+}
+
+function quad(a, b, c) {
+    let sol = null;
+    if (Math.abs(a) < 1e-6) {
+        if (Math.abs(b) < 1e-6) {
+            sol = Math.abs(c) < 1e-6 ? [0, 0] : null;
+        } else {
+            sol = [-c / b, -c / b];
+        }
+    } else {
+        let disc = b * b - 4 * a * c;
+        if (disc >= 0) {
+            disc = Math.sqrt(disc);
+            a = 2 * a;
+            sol = [(-b - disc) / a, (-b + disc) / a];
+        }
+    }
+    return sol;
+}
+
   function fetchAngle(a, b) {
     let m = Math.atan((a.y-b.y)/(a.x-b.x))
     if(a.x < b.x) { return m } else { return Math.PI + m }
