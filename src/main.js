@@ -83,7 +83,7 @@ var objects = [
     }),
 ]
 //tutorial.loadWorld()
-earth1.loadWorld()
+grind.loadWorld()
 var debugAnglePoints = []
 var recentShot = [v(0, 0), v(50, 50)]
 var recentShots = []
@@ -125,7 +125,7 @@ function render() {
     for(obj of objects) {
         ctx.fillStyle = "#ffffff"
         if(obj instanceof Trigger) {
-            
+            /*
             ctx.strokeStyle = "#ff00ff"
             ctx.beginPath();
             ctx.lineWidth = 4
@@ -133,7 +133,7 @@ function render() {
             ctx.stroke();
             ctx.strokeStyle = "#ffffff"
             ctx.lineWidth = 1
-            
+            */
         } else {
             if(obj instanceof Enemy) {ctx.fillStyle = "#ff0000"}
             if(obj instanceof Bullet) {obj.force instanceof Enemy? ctx.fillStyle = "#f20" : ctx.fillStyle = "#0af"}
@@ -244,6 +244,9 @@ function render() {
         //ctx.fillRect(borders.min+place*(borders.max-borders.min-64), window.innerHeight-200, 64, 64)
         
     }
+
+    renderStyle() 
+
     ctx.textAlign = "center";
     ctx.fillStyle = "#fff"
     ctx.font = "25px Arial";
@@ -376,7 +379,9 @@ function shoot() {
     }
 
     if(nearestpoint != null) {
+        //console.log(nearestpoint.obj)
         //debugAnglePoints.push(nearestpoint.pos)
+        let distance = getDistance(nearestpoint.obj.pos, player.middle)
         recentShots.push( [playerpoint, nearestpoint.pos, 333] )
         if(nearestpoint.obj.health != undefined) {
             nearestpoint.obj.damage(12.5)
@@ -388,7 +393,12 @@ function shoot() {
             nearestpoint.obj.vel.y = -Math.sin(a)
         }
         if(nearestpoint.obj instanceof Coin) {
-            objects.push(new Explosion(nearestpoint.obj.pos, 80, {force:80}))
+            objects.push(new Explosion(nearestpoint.obj.middle, Math.sqrt(distance*250), {force:10, dmg:10}))
+            objects[objects.length-1].explode()
+            let a = fetchAngle(nearestpoint.obj.pos, player.middle)
+            let force = 10
+            //nearestpoint.obj.vel.x += -Math.cos(a) * force
+            //nearestpoint.obj.vel.y += -Math.sin(a) * force * 2
         }
     } else {
         let farpoint = v(0, 0)

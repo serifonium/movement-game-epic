@@ -17,6 +17,10 @@ class Enemy {
             player.getStyle(a,d)
             if(player.fuel<100)player.fuel += a/d
             if(this.health<=0)this.remove()
+            objects.push(new CombatText(v(this.middle.x, this.middle.y), a))
+            if(method == "punch") {
+                objects.push(new StyleText(v(this.middle.x, this.middle.y), "Fistful", "#05f"))
+            } else if(method == "recoil") objects.push(new StyleText(v(this.middle.x, this.middle.y), "Recoil", "#f00"))
         }
         this.remove = () => {
             for(let o in objects) {
@@ -73,8 +77,20 @@ class Drone extends Enemy {
             let rad = this.playerDist
             let center = v(player.pos.x+player.scale.x/2, player.pos.y+player.scale.y/4)
 
+            const LEAD_TARGET = true
+
+            let leadingTarget = intercept(this.pos, {
+                ...center,
+                vx:player.vel.x,
+                vy:player.vel.y,
+            },
+            10 
+            )
+
+            console.log(leadingTarget)
+
             let u = this.pos
-            let l = center
+            let l = LEAD_TARGET?(leadingTarget||center):center
             let m = (u.y-l.y)/(u.x-l.x)
             let c = u.y-m*u.x
             let a
@@ -175,7 +191,7 @@ class Bullet {
             for(let obj of objects) {
                 if(overlapping(obj.pos.x, obj.pos.y, obj.scale.x, obj.scale.y, this.pos.x, this.pos.y, this.scale.x, this.scale.y)&&!(obj instanceof Bullet)&&!(obj instanceof this.force.constructor)) {
                     if(obj.health) { 
-                        if(this.force.constructor == Player) obj.damage(this.speed, 4)
+                        if(this.force.constructor == Player) obj.damage(this.speed, 4, "recoil")
                         else {obj.health += -this.speed}
                     }
                     this.remove()
