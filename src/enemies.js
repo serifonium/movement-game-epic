@@ -5,6 +5,7 @@ class Enemy {
         this.scale = scale
         this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
         this.health = 50
+        this.resistance = 1
         this.speed = 8
         this.acceldiv = 16
         this.whiplashable = false
@@ -12,9 +13,9 @@ class Enemy {
             return Math.random()/e+(e-1)/e
         }
         this.damage = (a,d=6,method)=>{
-            this.health += -a
+            this.health += -a/this.resistance
             player.getStyle(a,d)
-            if(player.fuel<100)player.fuel += a/d
+            if(player.fuel<100)player.fuel += a/(3*d)
             if(this.health<=0)this.remove()
             objects.push(new CombatText(v(this.middle.x, this.middle.y), a))
             if(method == "punch") {
@@ -382,7 +383,7 @@ class Virtue extends Enemy {
                 ctx.fillRect(this.beam.pos.x-this.beam.size/2,-100000, this.beam.size, 200000)
                 ctx.globalAlpha *= 2
                 ctx.fillRect(this.beam.pos.x-this.beam.size/4,-100000, this.beam.size/2, 200000)
-            }
+            } /*
             ctx.fillStyle="#f30"
             ctx.beginPath()
             ctx.arc(this.sourcePoint.x, this.sourcePoint.y, 4, 0, Math.PI*2)
@@ -391,6 +392,7 @@ class Virtue extends Enemy {
             ctx.beginPath()
             ctx.arc(this.sourcePoint.x, this.sourcePoint.y, this.wanderLimit, 0, Math.PI*2)
             ctx.stroke()
+            */
         } 
         this.remove = () => {
             if(this.beam.state=="launch")Virtue.FIRING = false
@@ -454,4 +456,154 @@ class Virtue extends Enemy {
     }
 }
 
-//class {}
+class Idol extends Enemy {
+    constructor(pos) {
+        super(pos, v(100, 100))
+        this.health = 100
+        this.movepoint = v(player.pos.x, player.pos.y)
+        this.target = undefined
+        this.remove=()=>{
+            if(this.target)this.target.resistance = 1
+            for(let o in objects) {
+                if(objects[o] === this) {
+                    objects.splice(o, 1)
+                    return 0
+                }
+            }
+        }
+    } 
+    findTarget() {
+        let target = undefined
+        function checkAvaliability(o) {
+            let avaliable = true
+            objects.forEach((obj)=>{
+                if((obj instanceof Idol)) {
+                    if(obj.target == o) avaliable = false
+                }
+            })
+            return avaliable
+        }
+        objects.forEach((obj)=>{
+            if(obj instanceof Enemy && !(obj instanceof Idol)) {
+                if(checkAvaliability(obj)) target = obj
+            }
+        })
+        return target
+    }
+    update() {
+        this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+        this.vel = v(0, 0)
+        if(!this.target) {
+            this.target = this.findTarget()
+        } else {
+            this.target.resistance = 1000000000000000000000
+        }
+    }
+    render() {
+        ctx.fillStyle = "#f09"
+        ctx.strokeStyle = "#f09"
+        ctx.beginPath()
+        ctx.arc(this.middle.x, this.middle.y, 50, 0, Math.PI*2)
+        ctx.fill()
+        if(this.target) {
+            ctx.globalAlpha = 0.5
+            ctx.beginPath()
+            ctx.arc(this.target.middle.x, this.target.middle.y, 125, 0, Math.PI*2)
+            ctx.fill()
+            ctx.lineWidth = 10
+            ctx.beginPath()
+            ctx.moveTo(this.middle.x, this.middle.y)
+            ctx.lineTo(this.target.middle.x, this.target.middle.y)
+            ctx.stroke()
+            ctx.globalAlpha = 1
+        }
+
+    }
+    
+}
+
+class Watcher extends Enemy {
+    constructor(pos) {
+        super(pos, v(256, 256))
+        this.maxHealth = 500
+        this.health = this.maxHealth
+        this.movepoint = v(player.pos.x, player.pos.y)
+        this.tex = v(0, 0)
+        this.lifespan = 0
+        this.blinkStamp = undefined
+    } 
+    update() {
+        this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+        this.vel = v(0, 0)
+        player.fuel = Math.max(0, player.fuel-0.4*getDeltaTime()*60/1000)
+        this.lifespan += getDeltaTime()
+        if(Math.random()<0.003 && !this.blinkStamp) {
+            this.blinkStamp = this.lifespan
+            console.log("e")
+        }
+        if(this.blinkStamp) {
+            if(this.lifespan-100<this.blinkStamp) this.tex = v(1, 0)
+            else if(this.lifespan-200<this.blinkStamp) this.tex = v(2, 0)
+            else if(this.lifespan-300<this.blinkStamp) this.tex = v(3, 0)
+            else if(this.lifespan-400<this.blinkStamp) this.tex = v(2, 0)
+            else if(this.lifespan-500<this.blinkStamp) this.tex = v(1, 0)
+            else if(this.lifespan-600<this.blinkStamp) {
+                this.tex = v(0, 0)
+                this.blinkStamp = undefined
+                for(let i=0;i<1;i++) { 
+                    let angle = fetchAngle(this.middle, player.middle)+Math.random()-0.5
+                    objects.push(new Fire(this.middle, v(Math.cos(angle)*10, Math.sin(angle)*10), this))
+                }
+            }
+
+        }
+    }
+    render() {
+        ctx.fillStyle="#f07"
+        ctx.globalAlpha = 0.5
+        ctx.beginPath()
+        ctx.arc(this.middle.x, this.middle.y, 125, 0, Math.PI*2)
+        ctx.fill()
+        ctx.globalAlpha = 1
+        ctx.fillRect(this.pos.x-64, this.pos.y+108, 384*(this.health/this.maxHealth), 32)
+        watcherTexture.render(this.pos, this.tex, v(2, 2))
+        
+    }
+    
+}
+
+class Fire extends NoCollisionHitbox{
+    constructor(pos, vel, force) {
+        super(pos, v(64, 64))
+        this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+        this.force = force
+        this.vel = vel || v(0, 0)
+        this.lifespan = 1000
+        this.frameSpan = 0
+        this.frame = 0
+        this.frameLimit = 7
+    }
+    update() {
+        this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+        objects.forEach((obj)=>{
+            if(overlap(this, obj)) {
+                if(obj.damage&&this.force!=obj)obj.health += -0.2
+                if(obj instanceof Hitbox)this.vel=v(0, 0)
+            }
+        })
+        if(overlap(this, player)) player.damage(0.5)
+        this.frameSpan += getDeltaTime()
+        this.lifespan += -getDeltaTime()
+        if(this.frameSpan>200){
+            this.frame++
+            if(this.frame>this.frameLimit)this.frame+=-this.frameLimit
+            this.frameSpan += -200
+        }
+        if(this.lifespan<0)this.remove()
+    }
+    render() {
+        ctx.fillStyle = "#f00"
+        //ctx.fillRect(this.pos.x, this.pos.y, this.scale.x, this.scale.y)
+        fireTexture.render(this.pos, v(this.frame, 0))
+    }
+}

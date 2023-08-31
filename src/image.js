@@ -65,5 +65,7 @@ let textkeys = {
 let shotStyles = new SpreadSheet("./imgs/shotStyles.png", v(8, 8), v(64, 64))
 let styleStyles = new SpreadSheet("./imgs/style.png", v(4, 4), v(128,128))
 let weaponStyles = new SpreadSheet("./imgs/weapons.png", v(4, 4), v(128,128))
+let watcherTexture = new SpreadSheet("./imgs/watcher.png", v(4, 4), v(128,128))
+let fireTexture = new SpreadSheet("./imgs/fire.png", v(4, 4), v(64,64))
 let redText = new SpreadSheet("./imgs/redText.png", v(4, 4), v(32,64), textkeys)
 let whiteText = new SpreadSheet("./imgs/whiteText.png", v(4, 4), v(32,64), textkeys)

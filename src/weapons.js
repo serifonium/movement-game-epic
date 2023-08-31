@@ -36,7 +36,7 @@ class ShotgunPellet extends NoCollisionHitbox {
         })
     }
     render() {
-        if(this.hit) ctx.fillStyle = "#f60"
+        if(this.hit) ctx.fillStyle = "#f36"
         else ctx.fillStyle = "#6f0"
         ctx.fillRect(this.pos.x, this.pos.y, this.scale.x, this.scale.y)
     }
@@ -89,6 +89,7 @@ class Piercer extends Weapon {
                 return u
             }
             console.log(findLowest())*/
+            audioCache.piercerShoot.play()
             shoot()
         }
         this.secondaryFire=()=>{
@@ -124,6 +125,7 @@ class Shotgun extends Weapon {
                     ve.x*(1+(Math.random()-0.5)/6), ve.y*(1+(Math.random()-0.5)/6)
                 )))
             }
+            audioCache["shotgun"].play()
         }
         this.secondaryFire=()=>{
             player.hyper()

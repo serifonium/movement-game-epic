@@ -49,8 +49,9 @@ function renderWeaponIcons() {
     let ind = undefined
     if(player.weaponSelected instanceof Piercer) ind = 0
     if(player.weaponSelected instanceof Shotgun) ind = 1
+    
     weaponStyles.render(v(64, 64), v(ind, 0))
-
+    /*
     ctx.fillStyle = "#444"
     ctx.fillStyle = "#fff"
     for(let w in Weapons) {
@@ -63,5 +64,5 @@ function renderWeaponIcons() {
         ctx.globalAlpha = 1
         //ctx.fillRect(borders.min+place*(borders.max-borders.min-64), window.innerHeight-200, 64, 64)
         
-    }
+    }*/
 }

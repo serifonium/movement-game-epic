@@ -115,12 +115,16 @@ class GrindHandler {
         }
         var chances = {
             "Drone":0.8,
-            "Virtue":0.2
+            "Virtue":0.1,
+            "Idol":0.08,
+            "Watcher":0.02
         }
         for(let i=0; i<=this.wave;i++) {
             let enemyType = Math.random()
             if(enemyType < chances["Drone"]) objects.push(new Drone(generatePos()))
-            else objects.push(new Virtue(generatePos()))
+            else if(enemyType < chances["Drone"]+chances["Virtue"]) objects.push(new Virtue(generatePos()))
+            else if(enemyType < chances["Drone"]+chances["Virtue"]+chances["Idol"]) objects.push(new Idol(generatePos()))
+            else objects.push(new Watcher(generatePos()))
         }
     }
     update() {
@@ -297,6 +301,7 @@ class Explosion {
         
     }
     explode() {
+        audioCache.explosion.play()
         this.pushobj=(obj)=>{
             if(obj.vel&&obj.middle) {
                 var DISTANCE = getDistance(obj.middle, this.middle)
@@ -382,6 +387,7 @@ class Player {
         this.coinCooldown = {max:300, current:300}
         this.throwCoin=()=>{
             if(this.coinCooldown.current == this.coinCooldown.max) {
+                audioCache.coin.play()
                 const DISTANCE = getDistance(player.middle, hoverVector)
                 objects.push(new Coin(v(player.middle.x, player.middle.y), this.getPointingVel(Math.sqrt(DISTANCE))))
                 this.coinCooldown.current = 0
@@ -416,6 +422,7 @@ class Player {
             "1":()=>{player.weaponSelected=Weapons[0]},
             "2":()=>{player.weaponSelected=Weapons[1]},
             "e":()=>{
+                audioCache.weaponChange.play()
                 if(player.weaponSelected instanceof Piercer) player.weaponSelected = Weapons[1]
                 else if(player.weaponSelected instanceof Shotgun) player.weaponSelected = Weapons[0]
                 keys["e"] = false
@@ -430,7 +437,7 @@ class Player {
             speed:35,
             fuelCost:0,
             retractSpeed:25,
-            disapplyDist:100,
+            disapplyDist:200,
             maxDist:2000,
             maxLen:1000,
             target:undefined,
@@ -480,7 +487,7 @@ class Player {
                 ctx.fill();
                 ctx.lineWidth = 2
             }, apply:()=>{
-                if(this.fuel > this.whiplash.fuelCost) {
+                if(this.fuel >= this.whiplash.fuelCost) {
                     this.whiplash.active=!this.whiplash.active;
                     this.whiplash.angle=fetchAngle(this.middle, v(hover.x+untrs('x'), hover.y+untrs('y')))
                     this.fuel += -this.whiplash.fuelCost
@@ -519,6 +526,7 @@ class Player {
                             this.whiplash.target?obj.damage(this.punchDmg*2, 2, "punch"):obj.damage(this.punchDmg, 2, "punch")
                             let m = Math.PI + fetchAngle(obj.pos,this.middle)
                             obj.vel = v(Math.cos(m)*this.punchVel, Math.sin(m)*this.punchVel)
+                            audioCache["punch"].play()
                         }
                         if(obj instanceof Bullet && obj.force instanceof Enemy) {
                             let m = Math.PI + fetchAngle(obj.pos,this.middle)
@@ -732,16 +740,25 @@ var grind = new World([
     new Hitbox(v(2000, -600), v(500, 50)),
     new Hitbox(v(2450, -1600), v(50, 1000)),
     new Hitbox(v(-2500, -1600), v(50, 1000)),
+    new Hitbox(v(-1750, 600), v(1000, 50)),
+    new Hitbox(v(750, 600), v(1000, 50)),
     new GrindHandler(),
-    new CustomTextObject(v(-300, 300), "The 'Grind' is an endless survival mode.", 0.5, whiteText),
-    new CustomTextObject(v(-200, 300+32*1), "WASD - Movement", 0.5, whiteText),
-    new CustomTextObject(v(-200, 300+32*2), "Space - Jump", 0.5, whiteText),
-    new CustomTextObject(v(-200, 300+32*3), "SHIFT - Dash", 0.5, whiteText),
-    new CustomTextObject(v(-200, 300+32*4), "F - Punch", 0.5, whiteText),
-    new CustomTextObject(v(-200, 300+32*5), "R - Grapple", 0.5, whiteText),
-    new CustomTextObject(v(-200, 300+32*6), "E - Swap Weapon", 0.5, whiteText),
-    new CustomTextObject(v(-200, 300+32*7), "LMB - Primary Fire", 0.5, whiteText),
-    new CustomTextObject(v(-200, 300+32*8), "RMB - Alternate Fire", 0.5, whiteText),
-    new CustomTextObject(v(-200, 300+32*9), "(+ -) - Zoom", 0.5, whiteText),
+    //new CustomTextObject(v(-250, 250), "Audio may take some time to intiate", 0.5, redText),
+    new CustomTextObject(v(-300, 300), "The 'Grind' is an endless survival mode.", 0.5, redText),
+    new CustomTextObject(v(-400, 300+32*2), "WASD - Movement", 0.5, whiteText),
+    new CustomTextObject(v(-400, 300+32*3), "Space - Jump", 0.5, whiteText),
+    new CustomTextObject(v(-400, 300+32*4), "SHIFT - Dash", 0.5, whiteText),
+    new CustomTextObject(v(-400, 300+32*5), "F - Punch", 0.5, whiteText),
+    new CustomTextObject(v(-400, 300+32*6), "R - Grapple", 0.5, whiteText),
+    new CustomTextObject(v(-400, 300+32*7), "E - Swap Weapon", 0.5, whiteText),
+    new CustomTextObject(v(-400, 300+32*8), "LMB - Primary Fire", 0.5, whiteText),
+    new CustomTextObject(v(-400, 300+32*9), "RMB - Alternate Fire", 0.5, whiteText),
+    new CustomTextObject(v(-400, 300+32*10), "(+ -) - Zoom", 0.5, whiteText),
+    new CustomTextObject(v(200, 300+32*2), "Enemies:", 0.5, whiteText),
+    new CustomTextObject(v(200, 300+32*3), "Drone - Shoots bullets", 0.5, whiteText),
+    new CustomTextObject(v(200, 300+32*4), "Virtue - Spawns aerial light beams", 0.5, whiteText),
+    new CustomTextObject(v(200, 300+32*5), "Idol - Protects other enemies", 0.5, whiteText),
+    new CustomTextObject(v(200, 300+32*6), "Watcher - Drains your fuel", 0.5, whiteText),
+    //new Trigger(v(0, 100), v(50, 50), ()=>{objects.push(new Fire(v(-400, 100)), new Watcher(v(400, -100)))})
 
 ])
