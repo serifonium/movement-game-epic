@@ -76,8 +76,20 @@ class Drone extends Enemy {
             let rad = this.playerDist
             let center = v(player.pos.x+player.scale.x/2, player.pos.y+player.scale.y/4)
 
+            const LEAD_TARGET = true
+
+            let leadingTarget = intercept(this.pos, {
+                ...center,
+                vx:player.vel.x,
+                vy:player.vel.y,
+            },
+            10 
+            )
+
+            console.log(leadingTarget)
+
             let u = this.pos
-            let l = center
+            let l = LEAD_TARGET?(leadingTarget||center):center
             let m = (u.y-l.y)/(u.x-l.x)
             let c = u.y-m*u.x
             let a
