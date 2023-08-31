@@ -575,7 +575,7 @@ let tutorial = new World([
     new Hitbox(v(6400, 100), v(1000, 50)),
 ])
 
-let earth1 = new World([
+var earth1 = new World([
     new Hitbox(v(-500, 600), v(1500, 50)),
     new Hitbox(v(2000, 600), v(1000, 50)),
     new Hitbox(v(1000, 600), v(50, 1000)),
@@ -628,7 +628,7 @@ let earth1 = new World([
     }),
 ])
 
-let grind = new World([
+var grind = new World([
     new Hitbox(v(-500, 200), v(1000, 50)),
     new Hitbox(v(-1500, -200), v(500, 50)),
     new Hitbox(v(1000, -200), v(500, 50)),
