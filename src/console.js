@@ -26,6 +26,15 @@ function consoleCommand(command) {
         if(command[a] == "god") {
             player.god = !player.god
         }
+        if(command[a] == "wave") {
+            if(command[a+1]) {
+                let handler = null
+                objects.forEach((obj)=>{
+                    if(obj instanceof GrindHandler)handler=obj
+                })
+                if(handler){handler.wave = command[a+1];console.log("e")}
+            }
+        }
         if(command[a] == "kill") {
             for(let i=0;i<10;i++) {
                 for(let o in objects) {
@@ -60,7 +69,7 @@ function consoleCommand(command) {
 }
 
 var startingComms = [
-    //"/god",
+    "/god",
 ]
 
 for(let comm of startingComms) {

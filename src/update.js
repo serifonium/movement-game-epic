@@ -3,6 +3,7 @@
 function update() {
     tick = Date.now()
 
+   
 
     for(obj of objects) {
         if(obj.vel) {

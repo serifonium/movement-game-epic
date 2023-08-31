@@ -31,7 +31,8 @@ document.addEventListener('keydown', (e)=>{
 })
 var rightClickDown = false
 function onRightClick() {
-    console.log("epic")
+    //console.log("epic")
+    //player.throwCoin()
     rightClickDown = true
 }
 document.addEventListener('keyup', (e)=>{
@@ -193,13 +194,14 @@ function render() {
             ctx.strokeStyle = "#fff"
             ctx.fillStyle = "#fff"
             ctx.beginPath()
-            
+            /*
             ctx.moveTo(obj.middle.x, obj.middle.y)
             ctx.lineTo(obj.middle.x+obj.vel.x*50, obj.middle.y+obj.vel.y*50)
             ctx.stroke()
             ctx.beginPath()
             ctx.arc(obj.middle.x+obj.vel.x*50, obj.middle.y+obj.vel.y*50, 4, 0, Math.PI*2)
             ctx.fill()
+            */
         }
     }
     
@@ -228,22 +230,9 @@ function render() {
     ctx.fillText(Math.floor(player.style), window.innerWidth/2+150-player.scale.x/2, window.innerHeight-100)
     ctx.font = "10px Arial"
     
-    function getMid(obj) {return v(obj.pos.x + obj.scale.x, obj.pos.y + obj.scale.y)}
-    let borders = {min:300, max:window.innerWidth-300}
-    ctx.fillStyle = "#444"
+   
     //dctx.fillRect(borders.min, 64, borders.max-borders.min, 64)
-    ctx.fillStyle = "#fff"
-    for(let w in Weapons) {
-        let wep = Weapons[w]
-        let place = (w)/(Weapons.length-1)
-        w==2?ctx.globalAlpha = 1:ctx.globalAlpha = 0.25
-        let x_ = borders.min+place*(borders.max-borders.min-64)
-        let y_ = window.innerHeight-200
-        shotStyles.render(v(x_, y_), v(w, 0))
-        ctx.globalAlpha = 1
-        //ctx.fillRect(borders.min+place*(borders.max-borders.min-64), window.innerHeight-200, 64, 64)
-        
-    }
+    renderWeaponIcons()
 
     renderStyle() 
 
@@ -254,7 +243,7 @@ function render() {
     ctx.textAlign = "left";
     if(!player.alive) {
         ctx.textAlign = "center";
-        ctx.fillStyle = "#f40"
+        ctx.fillStyle = "#600"
         ctx.fillRect(0, 0, window.innerWidth, window.innerHeight)
         ctx.fillStyle = "#fff"
         ctx.font = "145px Arial"
@@ -271,9 +260,11 @@ function render() {
         ctx.globalAlpha = 1
         ctx.fillStyle = "#fff"
         ctx.font = "25px Arial";
-        ctx.fillText(consoleLine, 10, window.innerHeight-10)
+        renderText(consoleLine, v(10, window.innerHeight-100), undefined, 0.5)
+        //ctx.fillText(consoleLine, 10, window.innerHeight-10)
         for(let line in consoleHistory) {
-            ctx.fillText(consoleHistory[line],  10, window.innerHeight-110-line*30)
+            renderText(consoleHistory[line], v(10, window.innerHeight-150-line*20), undefined, 0.25)
+            //ctx.fillText(consoleHistory[line],  10, window.innerHeight-110-line*30)
         }
         ctx.font = "10px Arial";
     }
@@ -295,7 +286,7 @@ var consoleLine = "/"
 var consoleHistory = []
 
 var playerCollisionExclusion = (obj) => {
-    return !(obj instanceof Enemy) && !(obj instanceof Trigger) && !(obj instanceof Bullet) && !(obj instanceof NoCollisionHitbox) && !(obj instanceof Explosion)
+    return (!(obj instanceof Enemy) && !(obj instanceof Trigger) && !(obj instanceof Bullet) && !(obj instanceof NoCollisionHitbox) && !(obj instanceof Explosion) && !(obj instanceof ShotgunPellet)) || (obj instanceof Hitbox)
 }
 
 
@@ -393,7 +384,7 @@ function shoot() {
             nearestpoint.obj.vel.y = -Math.sin(a)
         }
         if(nearestpoint.obj instanceof Coin) {
-            objects.push(new Explosion(nearestpoint.obj.middle, Math.sqrt(distance*250), {force:10, dmg:10}))
+            objects.push(new Explosion(nearestpoint.obj.middle, Math.sqrt(distance*250), {force:10, dmg:30}))
             objects[objects.length-1].explode()
             let a = fetchAngle(nearestpoint.obj.pos, player.middle)
             let force = 10
@@ -411,9 +402,17 @@ function shoot() {
 
    
 }
-
+var shootDel = false
 window.addEventListener('mousedown', (e) => {
-    shoot()
+    if(detectLeftButton(e)) {
+        //shoot();
+        player.weaponSelected.primaryFire()
+    } else {
+        player.weaponSelected.secondaryFire()
+    }
+    
+    
+    console.log()
     //Weapons[player.weaponIndex].primaryFire()
     //fetchAngle(player.middle, hoverVector)
     //console.log(hover)
@@ -426,7 +425,14 @@ window.addEventListener('mouseup', (e) => {
 })
 
 
-
+function detectLeftButton(evt) {
+    evt = evt || window.event;
+    if ("buttons" in evt) {
+        return evt.buttons == 1;
+    }
+    var button = evt.which || evt.button;
+    return button == 1;
+}
 
 
 /*

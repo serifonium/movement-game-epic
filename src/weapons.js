@@ -8,13 +8,48 @@ class Weapon {
         }
     }
 }
+
+class ShotgunPellet extends NoCollisionHitbox {
+    constructor(pos=v(0, 0), vel=v(0, 0)) {
+        let scale = 10
+        super(v(pos.x-scale/2, pos.y-scale/2), v(scale, scale))
+        this.vel = vel
+        this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+        this.lifespan = 500
+        this.dmg = 2
+    }
+    update() {
+        this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+        this.lifespan += -getDeltaTime()
+        if(this.lifespan<0) this.remove()
+        objects.forEach((obj)=>{
+            if(overlap(this, obj)) {
+                if(obj.damage) {
+                    obj.damage(this.dmg, 1, "Shotgun")
+                    this.remove()
+                }
+                if(obj instanceof Hitbox) {
+                    this.remove()
+                }
+                
+            }
+        })
+    }
+    render() {
+        if(this.hit) ctx.fillStyle = "#f60"
+        else ctx.fillStyle = "#6f0"
+        ctx.fillRect(this.pos.x, this.pos.y, this.scale.x, this.scale.y)
+    }
+}
+
+
 class Piercer extends Weapon {
     constructor() {
         super("pistol")
         this.angle = undefined
         this.originPoint = v(0, 0)
         this.maxFireDist = 500
-        this.primaryFire = () => {
+        this.primaryFire = () => {/*
             
             this.originPoint = player.middle
             this.angle = fetchAngle(this.originPoint, hoverVector)
@@ -53,7 +88,11 @@ class Piercer extends Weapon {
                 }
                 return u
             }
-            console.log(findLowest())
+            console.log(findLowest())*/
+            shoot()
+        }
+        this.secondaryFire=()=>{
+            player.throwCoin()
         }
         this.render = () => {
             if(this.angle) {
@@ -74,29 +113,20 @@ class Shotgun extends Weapon {
         this.angle = undefined
         this.originPoint = v(0, 0)
         this.maxFireDist = 500
+        this.shotgunPelletAmn = 15
+        this.shotgunPelletVel = 20
         this.primaryFire = () => {
-            this.originPoint = player.middle
-            this.angle = fetchAngle(this.originPoint, hoverVector)
-            this.function = getFunction(this.originPoint, hoverVector)
-            console.log(this.function)
-            function checkHitboxCollision(obj) {
-                let lines = []
-                let intersections = []
-                lines.push(
-                    getFunction(obj.pos, v(obj.pos.x+obj.scale.x, obj.pos.y)),
-                    getFunction(obj.pos, v(obj.pos.x, obj.pos.y+obj.scale.y)),
-                    getFunction(v(obj.pos.x, obj.pos.y+obj.scale.y), v(obj.pos.x+obj.scale.x, obj.pos.y+obj.scale.y)),
-                    getFunction(v(obj.pos.x, obj.pos.y+obj.scale.y), v(obj.pos.x+obj.scale.x, obj.pos.y+obj.scale.y))
-                )
-                lines.forEach((line)=>{
-                    intersections.push(findIntersection(line, this.function))
-                })
-                debugAnglePoints.push(v(0, 0))
-                console.log(lines, intersections)
+            for(let i = 0; i < this.shotgunPelletAmn;i++) {
+                let angle = fetchAngle(player.middle, hoverVector)+(Math.random()-0.5)/2
+                //console.log(angle)
+                let ve = v(Math.cos(angle)*this.shotgunPelletVel, Math.sin(angle)*this.shotgunPelletVel)
+                objects.push(new ShotgunPellet(player.middle, v(
+                    ve.x*(1+(Math.random()-0.5)/6), ve.y*(1+(Math.random()-0.5)/6)
+                )))
             }
-            
-            checkHitboxCollision(objects[0])
-            //objects.forEach(checkHitboxCollision(obj))
+        }
+        this.secondaryFire=()=>{
+            player.hyper()
         }
         this.render = () => {
             if(this.angle) {

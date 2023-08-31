@@ -11,8 +11,7 @@ class Enemy {
         this.accelrand = (e) => {
             return Math.random()/e+(e-1)/e
         }
-        this.damage = (a,d=6)=>{
-            objects.push(new CombatText(this.pos, a))
+        this.damage = (a,d=6,method)=>{
             this.health += -a
             player.getStyle(a,d)
             if(player.fuel<100)player.fuel += a/d
@@ -36,7 +35,7 @@ class Enemy {
 class Drone extends Enemy {
     constructor(pos, firerate) {
         super(pos, v(50, 50))
-        this.health = 50
+        this.health = 25
         this.movepoint = v(player.pos.x, player.pos.y)
         this.power = 0
         this.firetick = firerate || 1000
@@ -87,7 +86,7 @@ class Drone extends Enemy {
             10 
             )
 
-            console.log(leadingTarget)
+            //console.log(leadingTarget)
 
             let u = this.pos
             let l = LEAD_TARGET?(leadingTarget||center):center
@@ -336,6 +335,7 @@ class Husk extends Enemy {
 }
 
 class Virtue extends Enemy {
+    static FIRING = false
     constructor(pos) {
         super(pos, v(75, 75))
         this.health = 50
@@ -392,23 +392,37 @@ class Virtue extends Enemy {
             ctx.arc(this.sourcePoint.x, this.sourcePoint.y, this.wanderLimit, 0, Math.PI*2)
             ctx.stroke()
         } 
+        this.remove = () => {
+            if(this.beam.state=="launch")Virtue.FIRING = false
+            for(let o in objects) {
+                if(objects[o] === this) {
+                    objects.splice(o, 1)
+                    return 0
+                }
+            }
+        }
         this.update = (e) => {
+            //console.log(Virtue.FIRING)
             this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
             this.vel = v(0, 0)
             if(this.beam.state=="charging") {this.beam.pos = player.middle}
-            this.beam.tick += (tick-lastTick)+Math.random()*1-0.5
+            if(!Virtue.FIRING||this.beam.state=="launch")this.beam.tick += getDeltaTime()+Math.random()*1-0.5
             if(this.beam.tick > this.beam.cooldownTick) {
                 this.beam.tick += -this.beam.cooldownTick
                 this.beam.hitPlayer = false
             }
             if(this.beam.tick < this.beam.chargingTick) this.beam.state = "charging"
-            else if(this.beam.tick < this.beam.launchTick) this.beam.state = "launch"
+            else if(this.beam.tick < this.beam.launchTick) {
+                this.beam.state = "launch"
+                Virtue.FIRING = true
+            }
             else if(this.beam.tick < this.beam.fireTick) {
                 if(!this.beam.hitPlayer&&overlap(player, {pos:v(this.beam.pos.x,-100000),scale:v(this.beam.size,200000)})) {
                     player.damage(50)
                     this.beam.hitPlayer = true
                 }
                 this.beam.state = "firing"
+                Virtue.FIRING = false
                 
             }
             else if(this.beam.tick < this.beam.cooldownTick) this.beam.state = "cooldown"

@@ -105,9 +105,10 @@ class GrindHandler {
         this.wave = 0
         this.pos = v(10000000, 1000000)
         this.scale = v(0, 0)
+        this.active = false
     }
     add_enemies() {
-        var bounds = v(2000, 1000)
+        var bounds = v(4000, 1000)
         var offset = v(0, -500)
         function generatePos() {
             return v(bounds.x*(Math.random()-0.5)+offset.x, bounds.y*(Math.random()-0.5)+offset.y)
@@ -123,25 +124,32 @@ class GrindHandler {
         }
     }
     update() {
-        let ENEMY_EXISTS = false
-        objects.forEach((obj)=>{if(obj instanceof Enemy)ENEMY_EXISTS=true}) 
-        if(ENEMY_EXISTS) {
-            
+        if(this.active) {
+            let ENEMY_EXISTS = false
+            objects.forEach((obj)=>{if(obj instanceof Enemy)ENEMY_EXISTS=true}) 
+            if(ENEMY_EXISTS) {
+                
+            } else {
+                this.add_enemies()
+                player.health = 100
+                player.fuel = 50
+                this.wave++
+            }
+            if(player.pos.y > 1000) {
+                player.damage(1.5)
+            }
         } else {
-            this.add_enemies()
-            player.health = 100
-            player.fuel = 50
-            this.wave++
-        }
-        if(player.pos.y > 1000) {
-            player.damage(1.5)
+            if(keys["enter"]) this.active = true
         }
     }
     render() {
-        ctx.fillStyle = "#f90"
+        renderText("WAVE "+String(this.wave), v(-200, 0), undefined, 2)
+        if(!this.active)renderText("Press [ENTER] to start game.", v(-210, -42), undefined, 0.5)
+        
+        /*ctx.fillStyle = "#f90"
         ctx.font = "300px Arial"
         ctx.fillText(this.wave, 0, 0)
-        ctx.font = "10px Arial"
+        ctx.font = "10px Arial"*/
     }
 }
 
@@ -166,7 +174,7 @@ class ParticleCloud {
 
 class CombatText extends NoCollisionHitbox {
     constructor(pos, value) {
-        super(pos, v(1, 1))
+        super(v(pos.x, pos.y), v(1, 1))
         this.value = value
         this.vel = v(0, -4)
         this.life = 2000
@@ -174,6 +182,7 @@ class CombatText extends NoCollisionHitbox {
     render() {
         ctx.fillStyle = "#f90"
         ctx.font = "30px Arial"
+        renderText(this.value, this.pos, undefined, 0.5)
         ctx.fillText(this.value, this.pos.x, this.pos.y)
         ctx.font = "10px Arial"
     }
@@ -203,6 +212,26 @@ class StyleText extends NoCollisionHitbox {
     }
 }
 
+class CustomTextObject extends NoCollisionHitbox {
+    constructor(pos, value, scale, spritesheet=redText) {
+        super(v(pos.x, pos.y), v(1, 1))
+        this.value = value
+        this.vel = v(0, 0)
+        this.scale = scale
+        this.spritesheet = spritesheet
+    }
+    render() {
+        ctx.fillStyle = "#02f"
+        ctx.font = "40px Arial"
+        renderText(this.value, v(this.pos.x, this.pos.y), undefined, this.scale, this.spritesheet)
+        //if(this.value>0)ctx.fillText(this.value, this.pos.x, this.pos.y)
+        ctx.font = "10px Arial"
+    }
+    update() {
+
+    }
+}
+
 class ProjectileBomb extends NoCollisionHitbox {
     constructor(pos, vel, exp) {
         super(v(pos.x, pos.y), v(5, 5))
@@ -222,14 +251,15 @@ class ProjectileBomb extends NoCollisionHitbox {
     render() {
         ctx.fillStyle = "#f90"
         ctx.beginPath()
-        ctx.arc(this.pos.x, this.pos.y, 5, 0, Math.PI*2)
+        ctx.arc(this.pos.x, this.pos.y, 15, 0, Math.PI*2)
         ctx.fill()
     }
 }
 
 class Coin extends NoCollisionHitbox {
     constructor(pos, vel) {
-        super(v(pos.x-50, pos.y-50), v(100, 100))
+        let scale = 190
+        super(v(pos.x-scale/2, pos.y-scale/2), v(scale, scale))
         this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
         this.vel = vel
     }
@@ -250,24 +280,7 @@ class Coin extends NoCollisionHitbox {
     }
 }
 
-class CombatText extends NoCollisionHitbox {
-    constructor(pos, value) {
-        super(v(pos.x, pos.y), v(1, 1))
-        this.value = value
-        this.vel = v(0, -2.5)
-        this.lifetime = 1000
-    } 
-    update() {
-        this.lifetime += -getDeltaTime()
-        if(this.lifetime < 0) this.remove()
-    }
-    render() {
-        ctx.fillStyle = "#f90"
-        ctx.font = "25px Arial";
-        ctx.fillText(this.value, this.pos.x, this.pos.y)
-        ctx.font = "10px Arial";
-    }
-}
+
 
 class Explosion {
     constructor(pos, radius, options={}) {
@@ -289,14 +302,12 @@ class Explosion {
                 var DISTANCE = getDistance(obj.middle, this.middle)
                 if(DISTANCE <= this.radius) {
                     let DISTMULTIPLIER = (this.radius/DISTANCE)
-                    console.log(DISTMULTIPLIER)
+                    //console.log(DISTMULTIPLIER)
                     let angle = fetchAngle(obj.middle, this.middle)
                     if(obj.middle.x<this.middle.x) {obj.vel.x += -1*Math.cos(angle)*this.force; }
                     else {obj.vel.x += -Math.cos(angle)*this.force; }
                     obj.vel.y += -Math.sin(angle)*this.force
                     if(obj.damage){obj.damage(this.dmg, 3)}
-                    obj.vel.y += -(Math.sin(angle)*this.force+4)
-                    if(obj.damage)obj.damage(30)
                 }
             }
         }
@@ -346,6 +357,7 @@ class Player {
         }
         this.style = 0
         this.weaponIndex=1
+        this.weaponSelected=Weapons[1]
         this.alive = true
         this.holding = []
         this.god = false
@@ -398,9 +410,16 @@ class Player {
         }
 
         this.keybinds = {
-            "c":this.hyper,
-            "x":this.throwCoin,
-            "q":this.getPointingVel
+            //"c":this.hyper,
+            //"x":this.throwCoin,
+            //"q":this.getPointingVel,
+            "1":()=>{player.weaponSelected=Weapons[0]},
+            "2":()=>{player.weaponSelected=Weapons[1]},
+            "e":()=>{
+                if(player.weaponSelected instanceof Piercer) player.weaponSelected = Weapons[1]
+                else if(player.weaponSelected instanceof Shotgun) player.weaponSelected = Weapons[0]
+                keys["e"] = false
+            },
         }
 
         this.whiplash = {
@@ -505,6 +524,14 @@ class Player {
                             let m = Math.PI + fetchAngle(obj.pos,this.middle)
                             obj.vel = v(Math.cos(m)*this.punchVel/5, Math.sin(m)*this.punchVel/5)
                             obj.force = player
+                        }
+                        if(obj instanceof ShotgunPellet) {
+                            let m = Math.PI + fetchAngle(obj.pos,this.middle)
+                            obj.vel.x += Math.cos(m)*this.punchVel 
+                            obj.vel.y += Math.sin(m)*this.punchVel
+                            obj.hit = true
+                            obj.dmg = 5
+                            obj.lifespan += 300
                         }
                     }
                 }
@@ -701,5 +728,20 @@ var grind = new World([
     new Hitbox(v(-500, 200), v(1000, 50)),
     new Hitbox(v(-1500, -200), v(500, 50)),
     new Hitbox(v(1000, -200), v(500, 50)),
-    new GrindHandler()
+    new Hitbox(v(-2500, -600), v(500, 50)),
+    new Hitbox(v(2000, -600), v(500, 50)),
+    new Hitbox(v(2450, -1600), v(50, 1000)),
+    new Hitbox(v(-2500, -1600), v(50, 1000)),
+    new GrindHandler(),
+    new CustomTextObject(v(-300, 300), "The 'Grind' is an endless survival mode.", 0.5, whiteText),
+    new CustomTextObject(v(-200, 300+32*1), "WASD - Movement", 0.5, whiteText),
+    new CustomTextObject(v(-200, 300+32*2), "Space - Jump", 0.5, whiteText),
+    new CustomTextObject(v(-200, 300+32*3), "SHIFT - Dash", 0.5, whiteText),
+    new CustomTextObject(v(-200, 300+32*4), "F - Punch", 0.5, whiteText),
+    new CustomTextObject(v(-200, 300+32*5), "R - Grapple", 0.5, whiteText),
+    new CustomTextObject(v(-200, 300+32*6), "E - Swap Weapon", 0.5, whiteText),
+    new CustomTextObject(v(-200, 300+32*7), "LMB - Primary Fire", 0.5, whiteText),
+    new CustomTextObject(v(-200, 300+32*8), "RMB - Alternate Fire", 0.5, whiteText),
+    new CustomTextObject(v(-200, 300+32*9), "(+ -) - Zoom", 0.5, whiteText),
+
 ])
