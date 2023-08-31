@@ -69,7 +69,7 @@ function consoleCommand(command) {
 }
 
 var startingComms = [
-    "/god",
+    //"/god",
 ]
 
 for(let comm of startingComms) {
