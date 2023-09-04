@@ -6,21 +6,21 @@ https://serifonium.github.io/movment-game-epic/
 
 A & D - left & right
 
-Space - jump
+Space - Jump
 
-Shift - dash
+Shift - Dash
 
-Control - slam
+Control - Slam
 
-LMB - shoot
+LMB - Shoot
+
+RMB - Alt Fire
+
+E - Swap Weapon
 
 R - Grapple
 
 F - Punch
-
-C - Bomb
-
-X - Coin (non-functional)
 
 ## enemies:
 
