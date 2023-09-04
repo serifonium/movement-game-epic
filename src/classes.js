@@ -555,7 +555,7 @@ class Player {
             player.fuel = Math.max(100, player.fuel)
         }
         if(this.punchCooldown.cur>=0) {
-            this.punchCooldown.cur += -(tick - lastTick)
+            this.punchCooldown.cur += -(tick - lastTick) * getDeltaTime()
         } else {
             this.punchCooldown.cur = 0
             this.punchingPos = undefined
@@ -564,8 +564,8 @@ class Player {
             this.health = 0
             this.alive = false
         } else if(this.health < 100 && this.fuel > 0.2) {
-            this.health += 0.2
-            this.fuel += -0.2
+            this.health += 0.2 * getDeltaTime()
+            this.fuel += -0.2 * getDeltaTime()
         }
         if(keys["r"]){
             keys["r"]=false;

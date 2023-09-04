@@ -6,7 +6,7 @@ class Enemy {
         this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
         this.health = 50
         this.resistance = 1
-        this.speed = 8
+        this.speed = 128
         this.acceldiv = 16
         this.whiplashable = false
         this.accelrand = (e) => {
@@ -126,7 +126,7 @@ class Drone extends Enemy {
             }
             this.power += (tick - lastTick)
             if(this.power > this.firetick) {
-                this.power += -this.firetick
+                this.power += -this.firetick * getDeltaTime()
                 objects.push(new Bullet(
                     v(this.pos.x+this.scale.x/2,this.pos.y+this.scale.y/2), v(Math.cos(this.getPlayerAngle()), Math.sin(this.getPlayerAngle())), this
                 ))

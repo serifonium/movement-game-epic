@@ -115,7 +115,7 @@ class Shotgun extends Weapon {
         this.originPoint = v(0, 0)
         this.maxFireDist = 500
         this.shotgunPelletAmn = 15
-        this.shotgunPelletVel = 20
+        this.shotgunPelletVel = 320
         this.primaryFire = () => {
             for(let i = 0; i < this.shotgunPelletAmn;i++) {
                 let angle = fetchAngle(player.middle, hoverVector)+(Math.random()-0.5)/2
