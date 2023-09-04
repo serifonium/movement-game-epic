@@ -19,8 +19,8 @@ function update() {
         }
     }
     if(player.noclip) {
-        player.pos.x += player.vel.x
-        player.pos.y += player.vel.y
+        player.pos.x += player.vel.x * getDeltaTime()
+        player.pos.y += player.vel.y * getDeltaTime()
     } else {
         let u = true
         for(obj of objects) {
@@ -28,7 +28,7 @@ function update() {
             && playerCollisionExclusion(obj)) {u = obj}
         }
         if(u==true) {
-            player.pos.x += player.vel.x
+            player.pos.x += player.vel.x * getDeltaTime()
         } else {
             if(player.vel.x > 0) {
                 player.pos.x = u.pos.x - player.scale.x - 0.1
@@ -46,7 +46,7 @@ function update() {
             && playerCollisionExclusion(obj)) u = obj
         }
         if(u==true) {
-            player.pos.y += player.vel.y
+            player.pos.y += player.vel.y * getDeltaTime()
         } else {
             if(player.vel.y > 0) {
                 player.pos.y = u.pos.y - player.scale.y - 0.1
@@ -69,21 +69,21 @@ function update() {
     if(player.onGround == true) player.vel.y = 0
 
     if(!player.onGround) {
-        if(player.vel.y < 30)player.vel.y += 1
+        if(player.vel.y < 30)player.vel.y += 1 * getDeltaTime()
     }
     if(player.onGround) {
         if(player.vel.x > 0){ 
             if(player.vel.x > player.speed) {
-                player.vel.x = player.vel.x * 0.94
+                player.vel.x = player.vel.x * Math.pow(0.94, getDeltaTime())
             } else {
-                player.vel.x += -0.25
+                player.vel.x += -0.25 * getDeltaTime()
             }
         }
         if(player.vel.x < 0) {
             if(player.vel.x > player.speed) {
-                player.vel.x = player.vel.x * 0.94
+                player.vel.x = player.vel.x * Math.pow(0.94, getDeltaTime())
             } else {
-                player.vel.x += 0.25
+                player.vel.x += 0.25 * getDeltaTime()
             }
         }
         if((player.vel.x <= 0.25 && player.vel.x >= -0.25) && (!keys['a'] && !keys['d'])) {
@@ -106,7 +106,7 @@ function update() {
         let dashMax = 42
         let dashSpeed = 22
         if(player.stam >= 1 && dashCooldown == 0) {
-            player.stam += -1
+            player.stam += -1 * getDeltaTime()
             dashCooldown = 10
             dashChain += 1
 
@@ -130,7 +130,7 @@ function update() {
 
     }
     if(player.stam < 3) {
-        player.stam += 0.02
+        player.stam += 0.02 * getDeltaTime()
     } else {
         player.stam = 3
     }
@@ -156,12 +156,12 @@ function update() {
     if(!consoleOpen) {
         if(keys["d"]) {
             if(player.vel.x < player.speed) {
-                player.vel.x += player.speed/8
+                player.vel.x += (player.speed/8) * getDeltaTime()
             }
         }
         if(keys["a"]) {
             if(player.vel.x > -player.speed) {
-                player.vel.x += -player.speed/8
+                player.vel.x += (-player.speed/8) * getDeltaTime()
             }
             
         }
@@ -230,23 +230,23 @@ function update() {
     
 
     
-    if(dashCooldown > 0) dashCooldown += -(tick - lastTick)
+    if(dashCooldown > 0) dashCooldown += -(tick - lastTick) * getDeltaTime()
     else dashCooldown = 0
 
     
-    if(jumpCooldown > 0) jumpCooldown += -(tick - lastTick)
+    if(jumpCooldown > 0) jumpCooldown += -(tick - lastTick) * getDeltaTime()
     else jumpCooldown = 0
 
-    if(recentShotLen > 0) recentShotLen += -(tick - lastTick)
+    if(recentShotLen > 0) recentShotLen += -(tick - lastTick) * getDeltaTime()
     else recentShotLen = 0
 
     for(let i of recentShots) {
-        if(i[2] > 0) i[2] += -(tick - lastTick)
+        if(i[2] > 0) i[2] += -(tick - lastTick) * getDeltaTime()
         else i[2] = 0
     }
 
     if(player.onGround) {
-        if(slamCooldown > 0) slamCooldown += -(tick - lastTick)
+        if(slamCooldown > 0) slamCooldown += -(tick - lastTick) * getDeltaTime()
         else { 
             slamCooldown = 0
             slamHeight = 0
@@ -255,9 +255,11 @@ function update() {
     lastTick = Date.now()
 }
 
+const UPDATE_PER_SECONDS = 60
+
 function getDeltaTime() {
-    return (tick - lastTick)
+    return ((tick - lastTick) / (1000/UPDATE_PER_SECONDS)) * 1
 }
 
-setInterval(update, 1000/60)
+setInterval(update, 1000/UPDATE_PER_SECONDS)
 
