@@ -19,6 +19,24 @@ def connect(sid, environ):
 def disconnect(sid):
     print('disconnect ', sid)
 
+    lgt = len(openIds)
+    for i in range(lgt):
+        if openIds[list(openIds.keys())[i]] == sid:
+            del openIds[list(openIds.keys())[i]]
+            i-=1
+
+    lgt = len(connections)
+    for i in range(lgt):
+        connectionKey = list(connections.keys())[i]
+        connectionValue = connections[connectionKey]
+
+        if connectionKey == sid or connectionValue == sid:
+            del connections[connectionKey]
+            i-=1
+ 
+    
+            
+
 
 
 
