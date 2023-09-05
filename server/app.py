@@ -16,7 +16,7 @@ def connect(sid, environ):
     print("connected: ", sid)
 
 @sio.on('disconnect')
-def disconnect(sid):
+async def disconnect(sid):
     print('disconnect ', sid)
 
     lgt = len(openIds)
@@ -31,6 +31,11 @@ def disconnect(sid):
         connectionValue = connections[connectionKey]
 
         if connectionKey == sid or connectionValue == sid:
+            if connectionKey == sid:
+                await sio.emit("unpaired", "pair has disconnected", to=connectionValue)
+            else:
+                await sio.emit("unpaired", "pair has disconnected", to=connectionKey)
+
             del connections[connectionKey]
             i-=1
  
@@ -58,6 +63,8 @@ async def opening(sid, data):
         await sio.emit("returnError", "id already in use", to=sid)
     else:
         openIds[nId] = sid
+        await sio.emit("opening", "opened id", to=sid)
+        print("opened id ", sid)
     
 @sio.on('join')
 async def joining(sid, data):
@@ -70,6 +77,10 @@ async def joining(sid, data):
         sid2 = openIds[aId]
         connections[sid1] = sid2
         connections[sid2] = sid1
+
+        await sio.emit("paired", "paired to "+sid1, to=sid2)
+        await sio.emit("paired", "paired to "+sid2, to=sid1)
+
     else:
         print("ERROR - id doesn't exist ", aId)
         await sio.emit("returnError", "id does not exist", to=sid)

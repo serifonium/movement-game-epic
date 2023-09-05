@@ -419,6 +419,7 @@ class Player {
             //"c":this.hyper,
             //"x":this.throwCoin,
             //"q":this.getPointingVel,
+            "C":()=>{player.weaponSelected.alter},
             "1":()=>{player.weaponSelected=Weapons[0]},
             "2":()=>{player.weaponSelected=Weapons[1]},
             "e":()=>{
