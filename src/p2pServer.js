@@ -111,34 +111,17 @@ class Multiplayer {
         this.clientId = `${Math.random()}`
 
         this.debug = true
+
+        this.events = {}
     }
     log(str) {
         if(this.debug)console.log(str)
     }
-}
-
-class Client extends Multiplayer {
-    constructor(id) {
-        super()
-
-        this.connected = false
-
-        this.connectionConn = new Connection()
-
-        this.mainConn = new Connection()
-
-        this.connectionConn.e.data = (e)=>{
-            this.log(e)
-            this.clientId = e
-            this.mainConn.join(e)
-            this.connectionConn.disconnect()
-        }
-        this.connectionConn.join(id)
-    }
-    send(data) {
-        if (this.mainConn.connected) this.mainConn.send(data)
+    on(name, callback) {
+        this.events[name] = callback
     }
 }
+
 class Host extends Multiplayer {
     constructor() {
         super()
@@ -147,17 +130,20 @@ class Host extends Multiplayer {
 
         this.clients = {}
     }
-    broadcast(data) {
+    broadcast(name, data) {
         for (let i = 0; i < Object.keys(this.clients).length; i++) {
             const client = this.clients[Object.keys(this.clients)[i]]
-            this.send(client.id, data)
+            this.send(client.id, name, data)
             
         }
     }
-    send(id, data) {
+    send(id, name, data) {
         if (this.clients[id]) {
             if (this.clients[id].connected) {
-                this.clients[id].send(data)
+                this.clients[id].send(JSON.stringify({
+                    name:name,
+                    data:data,
+                }))
             }
         }
     }
@@ -167,6 +153,17 @@ class Host extends Multiplayer {
 
         
         newConn.open(newId)
+        newConn.e.data = (e)=>{
+            let data = JSON.parse(e)
+            if (this.events[data.name]) {
+                this.events[data.name](newConn.id, JSON.parse(data.data))
+            }
+        }
+        newConn.e.unpaired = ()=>{
+            if (this.events["disconnect"]) {
+                this.events["disconnect"](newConn.id)
+            }
+        }
         this.clients[newConn.id] = newConn
 
         return newConn
@@ -187,5 +184,43 @@ class Host extends Multiplayer {
 
         this.connectionConn.open(id)
         
+    }
+}
+
+class Client extends Multiplayer {
+    constructor(id) {
+        super()
+
+        this.connected = false
+
+        this.connectionConn = new Connection()
+
+        this.mainConn = new Connection()
+        this.mainConn.e.data = (e)=>{
+            console.log("yay")
+            let data = JSON.parse(e)
+            if (this.events[data.name]) {
+                this.events[data.name](this.mainConn.id, JSON.parse(data.data))
+            }
+        }
+        this.mainConn.e.unpaired = ()=>{
+            if (this.events["disconnect"]) {
+                this.events["disconnect"](this.mainConn.id)
+            }
+        }
+
+        this.connectionConn.e.data = (e)=>{
+            this.log(e)
+            this.clientId = e
+            this.mainConn.join(e)
+            this.connectionConn.disconnect()
+        }
+        this.connectionConn.join(id)
+    }
+    send(name, data) {
+        if (this.mainConn.connected) this.mainConn.send(JSON.stringify({
+            name:name,
+            data:data,
+        }))
     }
 }

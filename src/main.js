@@ -1,3 +1,11 @@
+//import { MultiplayerController } from "./multiplayer.js";
+
+var multiplayerController = new MultiplayerController()
+
+setTimeout(() => {
+    multiplayerController.init()
+}, 1000);
+
 var canvas = document.getElementById("myCanvas")
 var ctx = canvas.getContext("2d");
 var ctx2 = canvas.getContext("2d");
