@@ -9,7 +9,13 @@ import {renderWeaponIcons, renderStyle, renderText} from "./render.js"
 import {consoleOpen, consoleLine, consoleHistory, enterConsoleKey} from "./console.js"
 import { particleHandler } from "./particles.js"
 import { pauseMenu } from "./menu.js"
+import { MultiplayerController } from "./multiplayer.js";
 
+var multiplayerController = new MultiplayerController()
+
+setTimeout(() => {
+    multiplayerController.init()
+}, 1000);
 
 var DebugRender = true
 
