@@ -1,6 +1,6 @@
 # movement-game-epic
 
-https://serifonium.github.io/movment-game-epic/
+https://serifonium.github.io/movement-game-epic/
 
 a small project heavily inspired off of Ultrakill
 
