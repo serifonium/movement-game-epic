@@ -1,8 +1,8 @@
-import {ctx, objects, keys, hoverVector, hover, untrs} from "./startup.js"
+import {ctx, objects, keys, hoverVector, hover, untrs, playerCollisionExclusion} from "./startup.js"
 import {Weapons} from "./weapons.js"
 import {getDeltaTime} from "./update.js"
 import {audioCache} from "./audio.js"
-import {Piercer, Shotgun, RocketLauncher, Rocket, ShotgunPellet} from "./weapons.js"
+import {Piercer, Shotgun, RocketLauncher, Railgun, Rocket, ShotgunPellet} from "./weapons.js"
 import {Hitbox, NoCollisionHitbox, Item, ItemStool, Explosion, Coin, ProjectileBomb, World, CustomTextObject, StyleText, Trigger, GrindHandler, CombatText, PlatformHitbox} from "./classes.js"
 import {Enemy, Bullet} from "./enemies.js"
 import { particleHandler } from "./particles.js"
@@ -17,8 +17,8 @@ class Player {
         this.scale = v(50, 100)
         this.stam = 3
         this.onGround = true
-        this.speed = 8
-        this.health =100
+        this.speed = 0.32
+        this.health = 100
         this.middle = v(this.pos.x+this.scale.x/2,this.pos.y+this.scale.y/4)
         this.fuel = 50
         this.stats = {
@@ -26,7 +26,7 @@ class Player {
         }
         this.style = 0
         this.weaponIndex=1
-        this.weaponSelected=Weapons[1]
+        this.weaponSelected=Weapons[0]
         this.alive = true
         this.holding = []
         this.god = false
@@ -43,66 +43,49 @@ class Player {
         this.punchOffset = 100
         this.punchDist = 150
         this.punchDmg = 20
-        this.punchVel = 10
+        this.punchVel = 1
 
         this.styleThresholds = [100, 400, 800, 1500,  2400, 4000, 6500, 9000,  13000, 15000, 18000, 22500]
 
-        this.getPointingVel=(modifier)=>{
-            let angle = fetchAngle(this.middle, hoverVector)
+        this.getPointingVel=(modifier, max)=>{
+            let angle = fetchAngle(this.getHeadPos(), hoverVector)
             let vel = v(0, 0)
-            if(hoverVector.x<this.middle.x) vel.x = Math.cos(angle)*modifier
+            if(hoverVector.x<this.getHeadPos().x) vel.x = Math.cos(angle)*modifier
             else vel.x = Math.cos(angle)*modifier
             vel.y = Math.sin(angle)*modifier
+            if(max) {
+                vel.x = Math.min(max, vel.x)
+                vel.y = Math.min(max, vel.y)
+            }
             return vel
         }
 
         this.hyperCooldown = {max:1000, current:1000}
         this.coinCooldown = {max:300, current:300}
-        this.throwCoin=()=>{
-            if(this.coinCooldown.current == this.coinCooldown.max) {
-                audioCache.coin.play()
-                const DISTANCE = getDistance(player.middle, hoverVector)
-                objects.push(new Coin(v(player.middle.x, player.middle.y), this.getPointingVel(Math.sqrt(DISTANCE)*10)))
-                this.coinCooldown.current = 0
-            }
-        }
         this.hyper = () => {
-            if(this.hyperCooldown.current == this.hyperCooldown.max) {
-                let collisionBox = {pos:player.middle,scale:v(1, 1000)}
-                let highestY = -Infinity
-                objects.forEach((obj)=>{
-                    if(overlap(collisionBox, obj)&&(obj instanceof Hitbox)) {
-                        if(highestY < obj.pos.y) highestY = obj.pos.y
-                    }
-                })
-                if(highestY!=-Infinity) {
-                    
-                    //objects.push(new Explosion(v(player.middle.x, highestY), 400, {force:30}))
-                    
-                }
-
-                const DISTANCE = getDistance(player.middle, hoverVector)
-                objects.push(new ProjectileBomb(v(player.middle.x, player.middle.y), this.getPointingVel(Math.sqrt(DISTANCE)*10), 
-                new Explosion(v(player.middle.x, highestY), 200, {force:50})))
-                this.hyperCooldown.current = 0
-            }
+            
         }
         this.getMiddle = () => {
             return v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+        } 
+        this.getHeadPos = () => {
+            return v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/4)
         }
 
         this.keybinds = {
             //"c":this.hyper,
             //"x":this.throwCoin,
             //"q":this.getPointingVel,
-            "1":()=>{player.weaponSelected=Weapons[0]},
-            "2":()=>{player.weaponSelected=Weapons[1]},
-            "3":()=>{player.weaponSelected=Weapons[2]},
+            "1":()=>{this.weaponSelected=Weapons[0]},
+            "2":()=>{this.weaponSelected=Weapons[1]},
+            "3":()=>{this.weaponSelected=Weapons[2]},
+            "4":()=>{this.weaponSelected=Weapons[3]},
             "e":()=>{
                 //audioCache.weaponChange.play()
-                if(player.weaponSelected instanceof Piercer) player.weaponSelected = Weapons[1]
-                else if(player.weaponSelected instanceof Shotgun) player.weaponSelected = Weapons[2]
-                else if(player.weaponSelected instanceof RocketLauncher) player.weaponSelected = Weapons[0]
+                if(this.weaponSelected instanceof Piercer) this.weaponSelected = Weapons[1]
+                else if(this.weaponSelected instanceof Shotgun) this.weaponSelected = Weapons[2]
+                else if(this.weaponSelected instanceof RocketLauncher) this.weaponSelected = Weapons[3]
+                else if(this.weaponSelected instanceof Railgun) this.weaponSelected = Weapons[0]
                 keys["e"] = false
             },
             "q":()=>{
@@ -111,6 +94,57 @@ class Player {
             },
             "escape":()=>{
                 pauseMenu.openMenu()
+            },
+            "a":()=>{
+                if(this.vel.x > -this.speed*2.3) {
+                    this.vel.x += (-this.speed/50) * getDeltaTime()
+                }
+            }, "d":()=>{
+                if(this.vel.x < this.speed*2.3) {
+                    this.vel.x += (this.speed/50) * getDeltaTime()
+                }
+            }, " ":()=>{
+                function checkSides() {
+                    for(let obj of objects) {
+                        if(obj instanceof Hitbox && playerCollisionExclusion(obj)) {
+                            if(overlapping(player.pos.x+1, player.pos.y, player.scale.x, player.scale.y, obj.pos.x, obj.pos.y, obj.scale.x, obj.scale.y)) return "right"
+                            if(overlapping(player.pos.x-1, player.pos.y, player.scale.x, player.scale.y, obj.pos.x, obj.pos.y, obj.scale.x, obj.scale.y)) return "left"
+                        }
+                    }
+                    return false
+                }
+                if(this.onGround) {
+                    if(this.slamCooldown > 0) { //REGULAR JUMPS
+                        this.vel.y = -0.26 - this.slamHeight*2; 
+                    } else {
+                        this.vel.y = -2.2; 
+                    }
+                    
+                    this.onGround = false
+                } else { 
+                    if(checkSides()!=false){ //WALL JUMPS
+                        if(checkSides() == "left") {
+                            this.vel.x = this.speed*4; 
+                            this.vel.y = -2.2; 
+                        } else if(checkSides() == "right") {
+                            this.vel.x = -this.speed*4; 
+                            this.vel.y = -2.2; 
+                        }
+                    }
+                    else if(this.stam >= 2 && this.jumpCooldown == 0) { //AIR JUMPS
+                        this.stam += -2
+                        this.jumpCooldown = 500
+                        if(this.slamCooldown > 0) {
+                            this.vel.y = -2.2; 
+                        } else {
+                            this.vel.y = -2.2; 
+                        }
+                    }
+                }
+                keys[" "] = false
+            }, "shift":()=>{
+                this.dash()
+                keys["shift"] = false
             }
         }
 
@@ -119,16 +153,16 @@ class Player {
             vel: v(0, 0),
             angle: undefined,
             active: false,
-            speed:35,
+            speed:25,
             fuelCost:0,
-            retractSpeed:25,
+            retractSpeed:.20,
             disapplyDist:100,
             maxDist:2000,
             maxLen:1000,
             target:undefined,
             update:()=>{
                 let whip = this.whiplash
-                if(!whip.pos) whip.pos = player.middle
+                if(!whip.pos) whip.pos = player.getMiddle()
                 if(getDistance(whip.pos, player.pos) > whip.maxDist) {whip.disapply();return null}
                 if(!whip.target) {
                     whip.pos.x += Math.cos(whip.angle)*whip.speed
@@ -142,8 +176,8 @@ class Player {
                         this.vel.x = Math.cos(a)*whip.retractSpeed*getDeltaTime()
                         this.vel.y = Math.sin(a)*whip.retractSpeed*getDeltaTime()
                     } else {
-                        whip.target.vel.x = -Math.cos(a)*whip.retractSpeed*getDeltaTime()*10
-                        whip.target.vel.y = -Math.sin(a)*whip.retractSpeed*getDeltaTime()*10
+                        whip.target.vel.x = -Math.cos(a)*whip.retractSpeed*getDeltaTime()/1.5
+                        whip.target.vel.y = -Math.sin(a)*whip.retractSpeed*getDeltaTime()/1.5
                     }
                     if(getDistance(whip.target.middle, player.pos) < whip.disapplyDist) {whip.disapply();return null}
                 }
@@ -183,8 +217,7 @@ class Player {
                     this.whiplash.angle=fetchAngle(this.middle, hoverVector)
                     this.fuel += -this.whiplash.fuelCost
                 }
-                console.log(this.whiplash.angle)
-            },disapply:()=>{
+            }, disapply:()=>{
                 this.whiplash.pos = undefined
                 this.whiplash.angle = undefined
                 this.whiplash.active = false
@@ -208,30 +241,36 @@ class Player {
     }
     punch() {
         if(!this.punchingPos) {
-            let a = fetchAngle(this.middle, hoverVector)
-            //console.log(a*radSym, this.middle, hover)
-            this.punchingPos = v(this.middle.x+Math.cos(a)*this.punchOffset,this.middle.y+Math.sin(a)*this.punchOffset)
+            let a = fetchAngle(this.getMiddle(), hoverVector)
+            this.punchingPos = v(this.getMiddle().x+Math.cos(a)*this.punchOffset,this.getMiddle().y+Math.sin(a)*this.punchOffset)
             for(let obj of objects) {
-                if(obj.middle) {
-                    if(getDistance(this.punchingPos, obj.middle)<this.punchDist) {
+                if(obj.getMiddle) {
+                    if(getDistance(this.punchingPos, obj.getMiddle())<this.punchDist) {
                         if(obj instanceof Enemy) {
                             this.whiplash.target?obj.damage(this.punchDmg*2, 2, "punch"):obj.damage(this.punchDmg, 2, "punch")
-                            let m = Math.PI + fetchAngle(obj.pos,this.middle)
+                            let m = Math.PI + fetchAngle(obj.pos,this.getMiddle())
                             obj.vel = v(Math.cos(m)*this.punchVel, Math.sin(m)*this.punchVel)
                             audioCache["punch"].play()
                         }
                         if(obj instanceof Bullet && obj.force instanceof Enemy) {
-                            let m = Math.PI + fetchAngle(obj.pos,this.middle)
-                            obj.vel = v(Math.cos(m)*this.punchVel/5, Math.sin(m)*this.punchVel/5)
+                            let m = Math.PI + fetchAngle(obj.pos,this.getMiddle())
+                            obj.vel = v(Math.cos(m)*this.punchVel, Math.sin(m)*this.punchVel)
                             obj.force = player
                         }
                         if(obj instanceof ShotgunPellet) {
-                            let m = Math.PI + fetchAngle(obj.pos,this.middle)
+                            let m = Math.PI + fetchAngle(obj.pos,this.getMiddle())
                             obj.vel.x += Math.cos(m)*this.punchVel 
                             obj.vel.y += Math.sin(m)*this.punchVel
                             obj.hit = true
                             obj.dmg = 5
                             obj.lifespan += 300
+                        }
+                        if(obj instanceof Coin) {
+                            let speedMod = 0.5
+                            let m = Math.PI + fetchAngle(obj.getMiddle(),this.getMiddle())
+                            obj.vel.x += Math.cos(m)*this.punchVel*speedMod
+                            obj.vel.y += Math.sin(m)*this.punchVel*speedMod
+                            obj.punched = true
                         }
                     }
                 }
@@ -240,53 +279,66 @@ class Player {
         }
     }
     updateMovement() {
-        if(player.noclip) {
+        if(this.noclip) {
 
         } else {
-            let Y_INTERSECTION = undefined
-            let X_INTERSECTION = undefined
-            
-
+            let objBelow = undefined
+            for(let obj of objects) {
+                if(overlap(obj, {pos:v(this.pos.x+16,this.pos.y+this.scale.y),scale:v(32,16)})&&obj.collision) {
+                    objBelow = obj
+                    
+                }
+            }
+            if(!objBelow) {this.onGround = false;}
+            if(!this.onGround) {
+                if(this.vel.y < 1.9){this.vel.y += 0.006 * getDeltaTime();}
+            }
+            this.pos.y += this.vel.y * getDeltaTime()
+            this.pos.x += this.vel.x * getDeltaTime()
             for(let obj of objects) {
                 if(overlap(obj, this)&&obj.collision) {
-                    Y_INTERSECTION = obj
+                    let corners = [v(obj.pos.x, obj.pos.y), v(obj.pos.x+obj.scale.x, obj.pos.y), v(obj.pos.x, obj.pos.y+obj.scale.y), v(obj.pos.x+obj.scale.x, obj.pos.y+obj.scale.y)]
+                    let closestCorner = corners[0]
+                    for(let i in corners) if(getDistance(corners[i], this.getMiddle()) < getDistance(closestCorner, this.getMiddle())){closestCorner = corners[i]}
+                    let angle = getAngle(closestCorner, this.getMiddle())
+                    if((((angle < 45 && angle > -135) && closestCorner.x < obj.getMiddle().x)||((135 > angle && angle > -45) && closestCorner.x > obj.getMiddle().x)) && closestCorner.y < obj.getMiddle().y) {this.pos.y = obj.pos.y - this.scale.y - 0.01; this.onGround = true; this.vel.y = 0}
+                    else if((((angle > 135 || angle < -90) && closestCorner.x < obj.getMiddle().x)||((angle < -135 || angle > 90) && closestCorner.x > obj.getMiddle().x)) && closestCorner.y > obj.getMiddle().y) {this.pos.y = obj.pos.y + obj.scale.y + 0.01; this.vel.y = 0}
+                    else if((((-45 < angle || angle < 135) && closestCorner.y > obj.getMiddle().y)||((45 < angle || angle < -135) && closestCorner.y < obj.getMiddle().y)) && closestCorner.x < obj.getMiddle().x) {this.pos.x = obj.pos.x - this.scale.x - 0.01; this.vel.x = 0}
+                    else if((((45 > angle || angle > -135) && closestCorner.y > obj.getMiddle().y)||((135 < angle || angle < -45) && closestCorner.y < obj.getMiddle().y)) && closestCorner.x > obj.getMiddle().x) {this.pos.x = obj.pos.x + obj.scale.x + 0.01; this.vel.x = 0}
                 }
             }
-            if(Y_INTERSECTION==undefined) player.pos.y += player.vel.y*getDeltaTime() 
-            else {
-                if(player.vel.y > 0) {
-                    player.pos.y = Y_INTERSECTION.pos.y - player.scale.y - 0.1
-                    player.onGround = true
-                }
-                else if(player.vel.y < 0) {
-                    player.pos.y = Y_INTERSECTION.pos.y + Y_INTERSECTION.scale.y + 0.1
-                    player.vel.y = 0
-                }
+            if(this.onGround) {
+                this.vel.x *= 0.90
+                if(Math.abs(this.vel.x)<0.02) {this.vel.x=0}
             }
-
-            for(let obj of objects) {
-                if(overlap(obj, this)&&obj.collision) {
-                    X_INTERSECTION = obj
-                }
-            }
-            if(X_INTERSECTION==undefined) player.pos.x += player.vel.x*getDeltaTime() 
-            else {
-                if(player.vel.x > 0) {
-                    player.pos.x = X_INTERSECTION.pos.x - player.scale.x - 0.1
-                    player.vel.x = 0
-                }
-                else if(player.vel.x < 0) {
-                    player.pos.x = X_INTERSECTION.pos.x + X_INTERSECTION.scale.x + 0.1
-                    player.vel.x = 0
-                }
-            }
-
-            
-            
         }
     }
+    dash() {
+        let dashMax = 5
+        let dashSpeed = 1.5
+        if(this.stam >= 1 && this.dashCooldown == 0) {
+            this.stam += -1
+            this.dashCooldown = 100
+            this.dashChain += 1
+
+            dashSpeed += this.dashChain*0.5
+
+            if(keys["d"]) {
+                this.vel.x = dashSpeed
+            } else if(keys["a"]) {
+                this.vel.x = -dashSpeed
+            } else if(this.vel.x > 0) {
+                this.vel.x = dashSpeed
+            } else if(this.vel.x < 0) {
+                this.vel.x = -dashSpeed
+            }
+        }
+
+
+    }
     update() {
-        //this.updateMovement()
+        
+        this.updateMovement()
         this.middle = v(this.pos.x+this.scale.x/2,this.pos.y+this.scale.y/4)
         if(player.god) {
             player.stam = 3
@@ -303,8 +355,8 @@ class Player {
             this.health = 0
             this.alive = false
         } else if(this.health < 100 && this.fuel > 0.2) {
-            this.health += 0.2 * getDeltaTime()
-            this.fuel += -0.2 * getDeltaTime()
+            this.health += 0.02 * getDeltaTime()
+            this.fuel += -0.02 * getDeltaTime()
         }
         if(keys["r"]){
             keys["r"]=false;
@@ -321,7 +373,7 @@ class Player {
     }
     render() {
         if(this.punchingPos) {
-            ctx.globalAlpha = this.punchCooldown.cur/this.punchCooldown.max
+            ctx.globalAlpha = Math.max(0, this.punchCooldown.cur/this.punchCooldown.max)
             ctx.fillStyle = "#f05"
             ctx.beginPath();
             ctx.arc(this.punchingPos.x, this.punchingPos.y, this.punchDist, 0, Math.PI*2)
@@ -332,6 +384,7 @@ class Player {
         ctx.fillRect(this.pos.x, this.pos.y, this.scale.x, this.scale.y)
         if(this.whiplash.active)this.whiplash.render()
         Weapons[this.weaponIndex].render()
+        Weapons[3].render()
         for(let i in this.holding) {
             ctx.fillStyle = this.holding[i]
             ctx.beginPath()

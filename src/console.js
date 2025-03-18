@@ -30,6 +30,7 @@ function enterConsoleKey(key) {
     else if(key=="ArrowDown") {}
     else if(key=="ArrowLeft") {}
     else if(key=="ArrowRight") {}
+    else if(key=="Escape") {openConsole(true)}
     else consoleLine += key
 }
 

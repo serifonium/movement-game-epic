@@ -1,4 +1,4 @@
-import {ctx, objects, keys} from "./startup.js"
+import {ctx, objects, keys, DebugRender} from "./startup.js"
 import {renderText} from "./render.js"
 import {player} from "./player.js"
 import {getDeltaTime} from "./update.js"
@@ -18,6 +18,10 @@ class Hitbox {
                 objects.splice(o, 1)
             }
         }
+    }
+    render() {
+        ctx.fillStyle = "#fff"
+        ctx.fillRect(this.pos.x, this.pos.y, this.scale.x, this.scale.y)
     }
     getMiddle() {
         return v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
@@ -233,8 +237,8 @@ class CombatText extends NoCollisionHitbox {
     constructor(pos, value) {
         super(v(pos.x, pos.y), v(1, 1))
         this.value = value
-        this.vel = v(0, -4)
-        this.life = 60
+        this.vel = v(0, -0.12)
+        this.life = 300
     }
     render() {
         ctx.fillStyle = "#f90"
@@ -286,7 +290,7 @@ class CustomTextObject extends NoCollisionHitbox {
         ctx.font = "10px Arial"
     }
     update() {
-
+        this.vel = v(0, 0)
     }
 }
 
@@ -297,8 +301,8 @@ class ProjectileBomb extends NoCollisionHitbox {
         this.exp = exp
     }
     update() {
-        this.vel.y += 5
-        this.vel.x>0?this.vel.x+=-2.15:this.vel.x+=2.15
+        this.vel.y += 0.02
+        this.vel.x>0?this.vel.x+=-0.005:this.vel.x+=0.005
         objects.forEach((obj)=>{if(overlap(obj, this)&&(obj instanceof Hitbox || obj instanceof Enemy)){
             this.remove()
             this.exp.middle = this.pos
@@ -307,7 +311,7 @@ class ProjectileBomb extends NoCollisionHitbox {
         }})
     }
     render() {
-        ctx.fillStyle = "#f90"
+        ctx.fillStyle = "#888"
         ctx.beginPath()
         ctx.arc(this.pos.x, this.pos.y, 15, 0, Math.PI*2)
         ctx.fill()
@@ -320,10 +324,11 @@ class Coin extends NoCollisionHitbox {
         super(v(pos.x-scale/2, pos.y-scale/2), v(scale, scale))
         this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
         this.vel = vel
+        this.punched = false
     }
     update() {
         this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
-        this.vel.y += 5
+        this.vel.y += 0.02
         
         objects.forEach((obj)=>{if(overlap(obj, {pos:this.middle, scale:v(1, 1)})&&obj instanceof Hitbox){
             this.remove()
@@ -334,7 +339,6 @@ class Coin extends NoCollisionHitbox {
         ctx.beginPath()
         ctx.arc(this.middle.x, this.middle.y, 5, 0, Math.PI*2)
         ctx.fill()
-        
     }
 }
 
@@ -440,8 +444,38 @@ class Explosion {
             this.remove()
         }
     }
+} 
+
+class RocketBomb extends NoCollisionHitbox {
+    constructor(pos, vel) {
+        super(pos, v(32, 32))
+        this.vel = vel || v(0, 0)
+    }
+    updateMovement() {
+        if(this.vel.y < 1.9){this.vel.y += 0.006 * getDeltaTime();}
+        this.pos.y += this.vel.y * getDeltaTime()
+        this.pos.x += this.vel.x * getDeltaTime()
+        for(let obj of objects) {
+            if(overlap(obj, this)&&obj.collision) {
+                let corners = [v(obj.pos.x, obj.pos.y), v(obj.pos.x+obj.scale.x, obj.pos.y), v(obj.pos.x, obj.pos.y+obj.scale.y), v(obj.pos.x+obj.scale.x, obj.pos.y+obj.scale.y)]
+                let closestCorner = corners[0]
+                for(let i in corners) if(getDistance(corners[i], this.getMiddle()) < getDistance(closestCorner, this.getMiddle())){closestCorner = corners[i]}
+                let angle = getAngle(closestCorner, this.getMiddle())
+                if((((angle < 45 && angle > -135) && closestCorner.x < obj.getMiddle().x)||((135 > angle && angle > -45) && closestCorner.x > obj.getMiddle().x)) && closestCorner.y < obj.getMiddle().y) {this.pos.y = obj.pos.y - this.scale.y - 0.01; this.onGround = true; this.vel.y *= -0.9999} //TOP
+                else if((((angle > 135 || angle < -90) && closestCorner.x < obj.getMiddle().x)||((angle < -135 || angle > 90) && closestCorner.x > obj.getMiddle().x)) && closestCorner.y > obj.getMiddle().y) {this.pos.y = obj.pos.y + obj.scale.y + 0.01; this.vel.y *= -1} //BOTTOM
+                else if((((-45 < angle || angle < 135) && closestCorner.y > obj.getMiddle().y)||((45 < angle || angle < -135) && closestCorner.y < obj.getMiddle().y)) && closestCorner.x < obj.getMiddle().x) {this.pos.x = obj.pos.x - this.scale.x - 0.01; this.vel.x *= -1} //LEFT
+                else if((((45 > angle || angle > -135) && closestCorner.y > obj.getMiddle().y)||((135 < angle || angle < -45) && closestCorner.y < obj.getMiddle().y)) && closestCorner.x > obj.getMiddle().x) {this.pos.x = obj.pos.x + obj.scale.x + 0.01; this.vel.x *= -1} //RIGHT
+            }
+        }
+    }
+    update() {
+        this.updateMovement()
+    }
+    render() {
+        ctx.fillStyle = "#f90"; ctx.fillRect(this.pos.x, this.pos.y, this.scale.x, this.scale.y)
+    }
 }
 
 
 
-export {Hitbox, NoCollisionHitbox, Item, ItemStool, Explosion, Coin, ProjectileBomb, World, CustomTextObject, StyleText, Trigger, GrindHandler, CombatText, PlatformHitbox}
+export {Hitbox, NoCollisionHitbox, Item, ItemStool, Explosion, Coin, ProjectileBomb, World, CustomTextObject, StyleText, Trigger, GrindHandler, CombatText, PlatformHitbox, RocketBomb}

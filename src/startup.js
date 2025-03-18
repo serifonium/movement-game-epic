@@ -11,6 +11,7 @@ var hoverVector = v(0, 0)
 var recentShots = []
 var hover = v(0, 0)
 var scaleFactor = 1/2
+var DebugRender = true
 
 var objects = [
     
@@ -64,5 +65,5 @@ window.addEventListener('mousemove', (e) => {
 
 export {
     ctx, canvas, objects, keys, hoverVector, recentShots, untrs, hover, playerCollisionExclusion, checkObjsOverlap, scaleFactor, zoomScaleFactor,
-    updateHoverVector
+    updateHoverVector, DebugRender
 }

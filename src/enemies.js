@@ -14,7 +14,7 @@ class Enemy {
         this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
         this.health = 50
         this.resistance = 1
-        this.speed = 128
+        this.speed = 0.6
         this.acceldiv = 16
         this.whiplashable = false
         this.accelrand = (e) => {
@@ -35,7 +35,7 @@ class Enemy {
                 angleRange:360,
                 angle:(Math.atan2(this.vel.y, this.vel.x) / (Math.PI/180)),
                 duration:1.6,
-                speed:200,
+                speed:10,
                 colour: "#ff0000"
 
             }, {
@@ -151,7 +151,7 @@ class Drone extends Enemy {
             if(this.power > this.firetick) {
                 this.power += -this.firetick
                 objects.push(new Bullet(
-                    v(this.pos.x+this.scale.x/2,this.pos.y+this.scale.y/2), v(Math.cos(this.getPlayerAngle()), Math.sin(this.getPlayerAngle())), this
+                    v(this.pos.x+this.scale.x/2,this.pos.y+this.scale.y/2), v(Math.cos(this.getPlayerAngle())/3, Math.sin(this.getPlayerAngle())/3), this
                 ))
             }
             this.movepoint = this.getPlayerPointRad()
@@ -187,6 +187,9 @@ class Drone extends Enemy {
                 this.pos.x = Infinity
             }
         }
+    }
+    getMiddle() {
+        return v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
     }
 }
 
@@ -225,6 +228,9 @@ class Bullet {
                 if(player.health) player.damage(this.speed)
                 this.remove()
             }
+        }
+        this.getMiddle = () => {
+            return v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
         }
     }
 }
@@ -356,16 +362,19 @@ class Husk extends Enemy {
             //this.pos.x += this.vel.x
         }
     }
+    getMiddle() {
+        return v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+    }
 }
 
 class Virtue extends Enemy {
-    static FIRING = false
+    static firing = false
     constructor(pos) {
         super(pos, v(75, 75))
         this.health = 50
         this.movepoint = v(player.pos.x, player.pos.y)
         this.power = 0
-        this.speed = 2
+        this.speed = 0.1
         this.angle = Math.random()*Math.PI*2
         this.sourcePoint = v(this.pos.x,this.pos.y)
         this.wanderLimit = 400
@@ -418,7 +427,7 @@ class Virtue extends Enemy {
             */
         } 
         this.remove = () => {
-            if(this.beam.state=="launch")Virtue.FIRING = false
+            if(this.beam.state=="launch")Virtue.firing = false
             for(let o in objects) {
                 if(objects[o] === this) {
                     objects.splice(o, 1)
@@ -431,7 +440,7 @@ class Virtue extends Enemy {
             this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
             this.vel = v(0, 0)
             if(this.beam.state=="charging") {this.beam.pos = player.middle}
-            if(!Virtue.FIRING||this.beam.state=="launch")this.beam.tick += getDeltaTime(true)
+            if(!Virtue.firing||this.beam.state=="launch")this.beam.tick += getDeltaTime(true)
             if(this.beam.tick > this.beam.cooldownTick) {
                 this.beam.tick += -this.beam.cooldownTick
                 this.beam.hitPlayer = false
@@ -439,7 +448,7 @@ class Virtue extends Enemy {
             if(this.beam.tick < this.beam.chargingTick) this.beam.state = "charging"
             else if(this.beam.tick < this.beam.launchTick) {
                 this.beam.state = "launch"
-                Virtue.FIRING = true
+                Virtue.firing = true
             }
             else if(this.beam.tick < this.beam.fireTick) {
                 if(!this.beam.hitPlayer&&overlap(player, {pos:v(this.beam.pos.x,-100000),scale:v(this.beam.size,200000)})) {
@@ -447,7 +456,7 @@ class Virtue extends Enemy {
                     this.beam.hitPlayer = true
                 }
                 this.beam.state = "firing"
-                Virtue.FIRING = false
+                Virtue.firing = false
                 
             }
             else if(this.beam.tick < this.beam.cooldownTick) this.beam.state = "cooldown"
@@ -476,6 +485,9 @@ class Virtue extends Enemy {
                 this.vel.y = Math.sin(this.angle)*this.speed*5
             }
         }
+    }
+    getMiddle() {
+        return v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
     }
 }
 
@@ -542,13 +554,15 @@ class Idol extends Enemy {
         }
 
     }
-    
+    getMiddle() {
+        return v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+    }
 }
 
 class Watcher extends Enemy {
     constructor(pos) {
         super(pos, v(256, 256))
-        this.maxHealth = 500
+        this.maxHealth = 200
         this.health = this.maxHealth
         this.movepoint = v(player.pos.x, player.pos.y)
         this.tex = v(0, 0)
@@ -592,7 +606,9 @@ class Watcher extends Enemy {
         watcherTexture.render(this.pos, this.tex, v(2, 2))
         
     }
-    
+    getMiddle() {
+        return v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+    }
 }
 
 class Fire {

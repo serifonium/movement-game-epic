@@ -1,38 +1,50 @@
 import {ctx} from "./startup.js"
 
 class SpreadSheet {
-    constructor(src, scale, pixelscale, keycodes) {
+    constructor(src, pixelscale, scale, keycodes) {
         this.img = new Image()
         this.img.src = src
-        this.scale = scale
         this.pscale = pixelscale
+        this.scale = scale
         this.keycodes = keycodes
     }
-    render(pos, imagepos, imagescale=v(1, 1)) {
+    render(pos=v(0, 0), imagepos=v(0, 0), imagescale=v(1, 1)) {
         ctx.drawImage(this.img,
-            imagepos.x*this.pscale.x,
-            imagepos.y*this.pscale.y,
-            this.pscale.x,
-            this.pscale.y,
+            imagepos.x*this.scale.x,
+            imagepos.y*this.scale.y,
+            this.scale.x,
+            this.scale.y,
             pos.x, 
             pos.y, 
-            this.pscale.x*imagescale.x, 
-            this.pscale.y*imagescale.y
+            this.scale.x*imagescale.x, 
+            this.scale.y*imagescale.y
         )
     } 
-    renderFromKeycodes(pos, key, imagescale=v(1, 1)) {
+    renderFromKeycodes(pos=v(0, 0), key, imagescale=v(1, 1)) {
         let imagepos = this.keycodes[key]
         ctx.drawImage(this.img,
-            imagepos.x*this.pscale.x,
-            imagepos.y*this.pscale.y,
-            this.pscale.x,
-            this.pscale.y,
+            imagepos.x*this.scale.x,
+            imagepos.y*this.scale.y,
+            this.scale.x,
+            this.scale.y,
             pos.x, 
             pos.y, 
-            this.pscale.x*imagescale.x, 
-            this.pscale.y*imagescale.y,
+            this.scale.x*imagescale.x, 
+            this.scale.y*imagescale.y,
         )
     }
+    renderCustomArea(pos=v(0, 0), imagepos=v(0, 0), scale=v(1, 1), imagescale=v(1, 1)) {
+        ctx.drawImage(this.img,
+            imagepos.x*this.scale.x,
+            imagepos.y*this.scale.y,
+            this.scale.x*scale.x,
+            this.scale.y*scale.y,
+            pos.x, 
+            pos.y, 
+            this.scale.x*imagescale.x*scale.x, 
+            this.scale.y*imagescale.y*scale.y
+        )
+    } 
 }
 let textkeys = {
     "a":v(0, 0), "b":v(1, 0), "c":v(2, 0), "d":v(3, 0),
@@ -66,10 +78,12 @@ let textkeys = {
 }
 let shotStyles = new SpreadSheet("./imgs/shotStyles.png", v(8, 8), v(64, 64))
 let styleStyles = new SpreadSheet("./imgs/style.png", v(4, 4), v(128,128))
-let weaponStyles = new SpreadSheet("./imgs/weapons.png", v(4, 4), v(128,128))
+let weaponStyles = new SpreadSheet("./imgs/weapons.png", v(4, 4), v(128,64))
 let watcherTexture = new SpreadSheet("./imgs/watcher.png", v(4, 4), v(128,128))
 let fireTexture = new SpreadSheet("./imgs/fire.png", v(4, 4), v(64,64))
 let redText = new SpreadSheet("./imgs/redText.png", v(4, 4), v(32,64), textkeys)
 let whiteText = new SpreadSheet("./imgs/whiteText.png", v(4, 4), v(32,64), textkeys)
+let ammoTypes = new SpreadSheet("./imgs/ammoTypes.png", v(4, 4), v(64, 64))
+let uiOverlay = new SpreadSheet("./imgs/uiOverlay.png", v(4, 4), v(256, 256))
 
-export {SpreadSheet, shotStyles, styleStyles, weaponStyles, watcherTexture, fireTexture, redText, whiteText}
+export {SpreadSheet, shotStyles, styleStyles, weaponStyles, watcherTexture, fireTexture, redText, whiteText, ammoTypes, uiOverlay}

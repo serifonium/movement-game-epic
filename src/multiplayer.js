@@ -25,7 +25,7 @@ class Connection {
 */
 
 import { Host, Client } from "./p2pServer.js";
-
+/*
 Object.prototype.getName = function() { 
     var funcNameRegex = /function (.{1,})\(/;
     var results = (funcNameRegex).exec((this).constructor.toString());
@@ -132,3 +132,4 @@ class MultiplayerController {
 }
 
 export { MultiplayerController }
+*/
