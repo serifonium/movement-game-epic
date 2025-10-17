@@ -76,12 +76,12 @@ class Player {
             //"c":this.hyper,
             //"x":this.throwCoin,
             //"q":this.getPointingVel,
-            "1":()=>{this.weaponSelected=Weapons[0]},
-            "2":()=>{this.weaponSelected=Weapons[1]},
-            "3":()=>{this.weaponSelected=Weapons[2]},
-            "4":()=>{this.weaponSelected=Weapons[3]},
+            "1":()=>{this.weaponSelected=Weapons[0];},
+            "2":()=>{this.weaponSelected=Weapons[1];},
+            "3":()=>{this.weaponSelected=Weapons[2];},
+            "4":()=>{this.weaponSelected=Weapons[3];},
             "e":()=>{
-                //audioCache.weaponChange.play()
+                audioCache.weaponChange.play()
                 if(this.weaponSelected instanceof Piercer) this.weaponSelected = Weapons[1]
                 else if(this.weaponSelected instanceof Shotgun) this.weaponSelected = Weapons[2]
                 else if(this.weaponSelected instanceof RocketLauncher) this.weaponSelected = Weapons[3]

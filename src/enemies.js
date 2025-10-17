@@ -437,9 +437,9 @@ class Virtue extends Enemy {
         }
         this.update = (e) => {
             //console.log(Virtue.FIRING)
-            this.middle = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
+            this.getMiddle() = v(this.pos.x+this.scale.x/2, this.pos.y+this.scale.y/2)
             this.vel = v(0, 0)
-            if(this.beam.state=="charging") {this.beam.pos = player.middle}
+            if(this.beam.state=="charging") {this.beam.pos = player.getMiddle()}
             if(!Virtue.firing||this.beam.state=="launch")this.beam.tick += getDeltaTime(true)
             if(this.beam.tick > this.beam.cooldownTick) {
                 this.beam.tick += -this.beam.cooldownTick
@@ -468,7 +468,7 @@ class Virtue extends Enemy {
             if((()=>{
                 for(let obj of checkObjsOverlap(this)) {if(obj instanceof Hitbox) return true}
                 return false
-            })() && (getDistance(this.middle, this.sourcePoint)>this.wanderLimit)) {
+            })() && (getDistance(this.getMiddle(), this.sourcePoint)>this.wanderLimit)) {
                 
                 this.vel.x = -Math.cos(this.angle)*this.speed
             }
@@ -476,10 +476,10 @@ class Virtue extends Enemy {
             if((()=>{
                 for(let obj of checkObjsOverlap(this)) {if(obj instanceof Hitbox) return true}
                 return false
-            })() && (getDistance(this.middle, this.sourcePoint)>this.wanderLimit)) {
+            })() && (getDistance(this.getMiddle(), this.sourcePoint)>this.wanderLimit)) {
                 this.vel.y += -Math.sin(this.angle)*this.speed
             }
-            if(getDistance(this.middle, this.sourcePoint)>=this.wanderLimit) {
+            if(getDistance(this.getMiddle(), this.sourcePoint)>=this.wanderLimit) {
                 this.angle += Math.PI
                 this.vel.x = Math.cos(this.angle)*this.speed*5
                 this.vel.y = Math.sin(this.angle)*this.speed*5
@@ -509,6 +509,9 @@ class Idol extends Enemy {
     } 
     findTarget() {
         let target = undefined
+
+        // !!! multiple idols can def one enemy
+        // check if object o is being idoled
         function checkAvaliability(o) {
             let avaliable = true
             objects.forEach((obj)=>{
@@ -518,6 +521,8 @@ class Idol extends Enemy {
             })
             return avaliable
         }
+
+        // loop through every non-idol enemy
         objects.forEach((obj)=>{
             if(obj instanceof Enemy && !(obj instanceof Idol)) {
                 if(checkAvaliability(obj)) target = obj
@@ -538,17 +543,17 @@ class Idol extends Enemy {
         ctx.fillStyle = "#f09"
         ctx.strokeStyle = "#f09"
         ctx.beginPath()
-        ctx.arc(this.middle.x, this.middle.y, 50, 0, Math.PI*2)
+        ctx.arc(this.getMiddle().x, this.getMiddle().y, 50, 0, Math.PI*2)
         ctx.fill()
         if(this.target) {
             ctx.globalAlpha = 0.5
             ctx.beginPath()
-            ctx.arc(this.target.middle.x, this.target.middle.y, 125, 0, Math.PI*2)
+            ctx.arc(this.target.getMiddle().x, this.target.getMiddle().y, 125, 0, Math.PI*2)
             ctx.fill()
             ctx.lineWidth = 10
             ctx.beginPath()
-            ctx.moveTo(this.middle.x, this.middle.y)
-            ctx.lineTo(this.target.middle.x, this.target.middle.y)
+            ctx.moveTo(this.getMiddle().x, this.getMiddle().y)
+            ctx.lineTo(this.target.getMiddle().x, this.target.getMiddle().y)
             ctx.stroke()
             ctx.globalAlpha = 1
         }

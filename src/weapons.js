@@ -105,12 +105,12 @@ function shoot() {
         }
         if(nearestpoint.obj instanceof Coin) {
             if(nearestpoint.obj.punched) {
-                objects.push(new Explosion(nearestpoint.obj.middle, Math.sqrt(distance*250), {force:20, dmg:50}))
-                objects.push(new Explosion(nearestpoint.obj.middle, Math.sqrt(distance*250)*Math.max(1, Math.sqrt(distance/500)), {force:10, dmg:30}))
+                objects.push(new Explosion(nearestpoint.obj.middle, Math.sqrt(distance*250), {force:2, dmg:50}))
+                objects.push(new Explosion(nearestpoint.obj.middle, Math.sqrt(distance*250)*Math.max(1, Math.sqrt(distance/500)), {force:1, dmg:30}))
                 objects[objects.length-1].explode()
                 objects[objects.length-1].explode()
             } else {
-                objects.push(new Explosion(nearestpoint.obj.middle, Math.sqrt(distance*250), {force:10, dmg:30}))
+                objects.push(new Explosion(nearestpoint.obj.middle, Math.sqrt(distance*250), {force:1, dmg:30}))
                 objects[objects.length-1].explode()
             }
         }
@@ -447,13 +447,20 @@ class RocketLauncher extends Weapon {
             if(this.cooldown == this.cooldownMax) {
                 this.angle = this.getAngle()
                 this.originPoint = player.middle
+
+                // add rocket
                 objects.push(new Rocket(player.getMiddle(), v(Math.cos(this.angle)*this.rocketVel, Math.sin(this.angle)*this.rocketVel)))
+
+                // remove ammo
                 this.cooldown = 0
                 this.remainingAmmo -= 1
+
+                // update ammo
                 if(this.remainingAmmo <= 0) {
                     this.cooldown = -this.cooldownMax
                     this.remainingAmmo = this.clipSize
                 }
+                audioCache.rocketShoot.play()
             }
         }
         this.secondaryFire=()=>{
@@ -532,6 +539,7 @@ class Railgun extends Weapon {
                 this.cooldown = -this.cooldownMax
                 this.remainingAmmo = this.clipSize
             }
+            audioCache.explosion.play()
         }
     }
     render() {
